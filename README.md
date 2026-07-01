@@ -1,0 +1,340 @@
+# LaraCache
+
+Automatic, self-invalidating query caching for Eloquent models.
+
+Add one trait to a model and its read queries are cached transparently. Any
+write — including bulk, raw, and event-suppressing "quiet" writes — flushes
+that model's cache automatically, so you never serve stale data.
+
+Invalidation uses **cache tags** when the store supports them (immediate,
+targeted flushing) and falls back to a **per-model version counter** on every
+other store (`file`, `database`, `array`, …). Either way, it just works.
+
+---
+
+## Table of contents
+
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [How it works](#how-it-works)
+- [What triggers a flush](#what-triggers-a-flush)
+- [Per-query controls](#per-query-controls)
+- [Caching modes (auto vs opt-in)](#caching-modes-auto-vs-opt-in)
+- [Row-level caching](#row-level-caching)
+- [Relationship-aware invalidation](#relationship-aware-invalidation)
+- [Stale-while-revalidate](#stale-while-revalidate)
+- [Facade & Artisan commands](#facade--artisan-commands)
+- [Events](#events)
+- [Testing your application](#testing-your-application)
+- [Configuration](#configuration)
+- [Per-model overrides](#per-model-overrides)
+- [Laravel Octane](#laravel-octane)
+- [Limitations & notes](#limitations--notes)
+- [Contributing](#contributing)
+
+---
+
+## Requirements
+
+- PHP 8.1+
+- Laravel 10, 11, or 12
+
+## Installation
+
+Install via Composer:
+
+```bash
+composer require hcs/laracache
+```
+
+The service provider and `LaraCache` facade are auto-discovered — no manual
+registration needed.
+
+Optionally publish the config file to `config/laracache.php`:
+
+```bash
+php artisan vendor:publish --tag=laracache-config
+```
+
+That's the whole setup. Every store works out of the box; there's nothing to
+migrate and no external service to run.
+
+## Quick start
+
+Add the `Cacheable` trait to any Eloquent model:
+
+```php
+use Hcs\LaraCache\Traits\Cacheable;
+use Illuminate\Database\Eloquent\Model;
+
+class Post extends Model
+{
+    use Cacheable;
+}
+```
+
+Now reads are cached and writes flush automatically:
+
+```php
+Post::where('published', true)->get();   // hits the DB, caches the result
+Post::where('published', true)->get();   // served from cache
+Post::count();                           // cached
+Post::find(1);                           // cached (per-row, see below)
+
+Post::create(['title' => 'Hello']);      // flushes Post's cache
+
+Post::where('published', true)->get();   // fresh from the DB again
+```
+
+## How it works
+
+1. The `Cacheable` trait backs the model with a `CachedQueryBuilder`.
+2. Every SELECT funnels through the builder's `runSelect()` (and `exists()`),
+   so `get`, `first`, `find`, `pluck`, `value`, `count`, `sum`, `exists`, and
+   even the pagination count query are all cached from one place.
+3. Every write funnels through the builder's write methods, which flush the
+   model's cache — catching bulk updates, raw inserts, `increment`, `truncate`,
+   and quiet writes that bypass model events.
+4. Flushing either clears the model's cache tags or bumps a per-model version
+   counter, depending on whether the store supports tags.
+
+## What triggers a flush
+
+- `create` / `save` / `update` / `delete` / `restore` / `forceDelete`
+- Bulk `Post::where(...)->update()` / `->delete()`
+- Raw `insert` / `upsert` / `insertOrIgnore`
+- `increment` / `decrement`
+- `truncate`
+- The `*Quietly()` variants (`saveQuietly`, `updateQuietly`, …)
+
+## Per-query controls
+
+```php
+Post::withoutCache()->get();              // skip the cache for this query
+Post::cacheFor(60)->get();                // custom TTL (seconds) for this query
+Post::cache()->where('active', 1)->get(); // explicitly opt in (opt-in mode)
+Post::query()->cacheKey('homepage')->get(); // use a fixed cache key
+```
+
+Each also works from an existing builder chain, e.g.
+`Post::where(...)->withoutCache()->get()`.
+
+## Caching modes (auto vs opt-in)
+
+By default (`mode => 'auto'`) every read is cached. Set the mode to `opt-in`
+to cache **only** queries you explicitly mark:
+
+```php
+// config/laracache.php
+'mode' => 'opt-in',
+```
+
+```php
+Post::all();                 // NOT cached
+Post::cache()->get();        // cached
+Post::cacheFor(120)->get();  // cached (cacheFor implies opt-in)
+```
+
+Writes always flush, regardless of mode.
+
+## Row-level caching
+
+Canonical `find($id)` lookups are cached under a stable per-row key, so a
+single row's cache **survives writes to other rows**:
+
+```php
+Post::find(1);   // cached
+Post::find(2);   // cached
+
+Post::find(2)->update(['title' => 'Changed']); // only row 2's cache is dropped
+
+Post::find(1);   // still served from cache
+Post::find(2);   // refetched (fresh)
+```
+
+Bulk updates, `truncate`, and `upsert` clear all row caches (they may touch
+unknown rows). Missing rows are never cached, so a later insert is picked up
+immediately. Non-canonical finds (extra constraints, custom columns, removed
+scopes, eager loads) fall back to normal query caching.
+
+Disable it with `'row_cache' => false` (or per model, see below). Row-level
+survival applies to version-counter stores; tag stores flush per-model.
+
+## Relationship-aware invalidation
+
+Flush a parent (or any related model) whenever this model changes:
+
+```php
+class Comment extends Model
+{
+    use Cacheable;
+
+    protected $flushRelated = ['post']; // relation name or model class
+
+    public function post()
+    {
+        return $this->belongsTo(Post::class);
+    }
+}
+```
+
+Creating or updating a `Comment` now also flushes the cached `Post` queries.
+
+## Stale-while-revalidate
+
+On Laravel 11+, serve an expired value instantly while it recomputes in the
+background (via `Cache::flexible()`):
+
+```php
+// config/laracache.php
+'ttl' => 60,   // fresh for 60s
+'swr' => 30,   // then served stale for up to 30s more while refreshing
+```
+
+## Facade & Artisan commands
+
+```php
+use Hcs\LaraCache\Facades\LaraCache;
+
+LaraCache::flush(Post::class);   // flush one model
+LaraCache::clear();              // flush all registered models
+LaraCache::warm(Post::class);    // pre-populate a model's cache
+LaraCache::stats();              // ['hits' => ..., 'misses' => ...]
+```
+
+```bash
+php artisan laracache:flush "App\Models\Post"
+php artisan laracache:clear
+php artisan laracache:warm "App\Models\Post"
+php artisan laracache:stats
+```
+
+Customize what warming runs by overriding `cacheWarmupQueries()` on the model:
+
+```php
+public function cacheWarmupQueries(): array
+{
+    return [
+        static::query(),
+        static::where('published', true),
+    ];
+}
+```
+
+`clear` and `warm` discover models registered at runtime; list any that must
+be reachable before boot in `config('laracache.models')`.
+
+## Events
+
+Three events are dispatched so you can log or measure cache behavior:
+
+- `Hcs\LaraCache\Events\CacheHit`
+- `Hcs\LaraCache\Events\CacheMissed`
+- `Hcs\LaraCache\Events\CacheFlushed`
+
+Each carries the `$model` (and, for hit/miss, the `$key`).
+
+## Testing your application
+
+Swap in a recording fake and assert on cache behavior — no counting SQL by
+hand:
+
+```php
+use Hcs\LaraCache\Facades\LaraCache;
+
+public function test_publishing_flushes_the_cache(): void
+{
+    $fake = LaraCache::fake();
+
+    Post::factory()->create();
+
+    $fake->assertFlushed(Post::class);
+}
+```
+
+Available assertions:
+
+```php
+$fake->assertFlushed(Post::class);
+$fake->assertNotFlushed(Post::class);
+$fake->assertNothingFlushed();
+$fake->assertHit(Post::class);    // or assertHit() for "any"
+$fake->assertMissed(Post::class); // or assertMissed() for "any"
+```
+
+## Configuration
+
+`config/laracache.php` (every key is env-driven):
+
+| Key                 | Default          | Description                                                        |
+|---------------------|------------------|--------------------------------------------------------------------|
+| `enabled`           | `true`           | Master on/off switch.                                              |
+| `store`             | `null`           | Cache store (`null` = app default).                               |
+| `ttl`               | `3600`           | Seconds to cache; `null` = forever.                               |
+| `ttl_jitter`        | `0.1`            | Randomly spread each TTL by ±this fraction (anti thundering-herd). |
+| `prefix`            | `laracache`      | Key prefix.                                                        |
+| `mode`              | `auto`           | `auto` caches everything; `opt-in` caches only `->cache()` queries. |
+| `row_cache`         | `true`           | Per-row caching for canonical `find($id)`.                        |
+| `swr`               | `0`              | Stale-while-revalidate grace seconds (Laravel 11+; 0 = off).      |
+| `use_tags`          | `auto`           | `auto`/`true` = tags when supported; `false` = version counter.   |
+| `lock_for`          | `10`             | Seconds to hold a stampede lock (needs a lock-capable store; 0 off). |
+| `max_rows`          | `null`           | Skip caching result sets larger than this.                        |
+| `volatile_patterns` | `now(), rand(, …`| Queries containing these substrings are never cached.             |
+| `stats`             | `false`          | Collect hit/miss counters.                                        |
+| `models`            | `[]`             | Models for `clear`/`warm` to discover before boot.                |
+
+Env variables: `LARACACHE_ENABLED`, `LARACACHE_STORE`, `LARACACHE_TTL`,
+`LARACACHE_TTL_JITTER`, `LARACACHE_PREFIX`, `LARACACHE_MODE`,
+`LARACACHE_ROW_CACHE`, `LARACACHE_SWR`, `LARACACHE_USE_TAGS`,
+`LARACACHE_LOCK_FOR`, `LARACACHE_MAX_ROWS`, `LARACACHE_STATS`.
+
+## Per-model overrides
+
+Declare any of these properties to override the global config for one model:
+
+```php
+class Post extends Model
+{
+    use Cacheable;
+
+    protected $cacheStore   = 'redis';     // this model's store
+    protected $cacheTtl     = 600;         // seconds; null = forever
+    protected $cacheEnabled = true;        // disable caching for just this model
+    protected $cacheTags    = ['catalog']; // extra tags (tag mode)
+    protected $cacheMaxRows = 5000;        // skip caching larger results
+    protected $flushRelated = ['comments'];// relations/models to co-flush
+}
+```
+
+## Laravel Octane
+
+LaraCache is Octane-safe: it registers listeners on `RequestReceived`,
+`TaskReceived`, and `TickReceived` to reset its process-static flush guard
+between requests, so a long-lived worker never carries state across requests.
+Nothing to configure.
+
+## Limitations & notes
+
+- **Eager-loaded relations** are cached as part of the related model's own
+  queries (which must also use `Cacheable`). A change to a related model does
+  not flush a parent's *root* query unless you wire it up with `$flushRelated`.
+- **`cursor()`** streams and is intentionally never cached.
+- **Direct `DB::table()` writes** bypass Eloquent entirely; call
+  `LaraCache::flush(Model::class)` afterward if you use them.
+- The **version counter** on non-atomic stores (`file`) can, under heavy
+  concurrent writes, briefly miss an increment. Use an atomic store (redis,
+  memcached) or a taggable store for high-write workloads.
+
+## Contributing
+
+```bash
+composer install
+composer test        # phpunit
+composer analyse     # phpstan / larastan
+composer format      # pint
+```
+
+## License
+
+MIT

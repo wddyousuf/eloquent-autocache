@@ -1,0 +1,13 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 5
+    paths:
+        - src
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        # The trait is consumed by application models, not by classes in src/.
+        - identifier: trait.unused
+        # Octane is an optional dependency, guarded at runtime by class_exists().
+        - '#class_exists\(\) with .Laravel\\\\Octane.* will always evaluate to false#'

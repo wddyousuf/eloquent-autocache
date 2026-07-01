@@ -1,0 +1,57 @@
+{
+    "name": "hcs/laracache",
+    "description": "Automatic Eloquent model query caching for Laravel with self-flushing on create, update, and delete.",
+    "keywords": ["laravel", "eloquent", "cache", "model-caching", "query-cache"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Hudson Creative Studio",
+            "email": "yousuf@hudsoncreativestudio.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "illuminate/database": "^10.0|^11.0|^12.0",
+        "illuminate/support": "^10.0|^11.0|^12.0",
+        "illuminate/cache": "^10.0|^11.0|^12.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "^2.0|^3.0",
+        "laravel/pint": "^1.0",
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "phpunit/phpunit": "^10.0|^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Hcs\\LaraCache\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Hcs\\LaraCache\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Hcs\\LaraCache\\LaraCacheServiceProvider"
+            ],
+            "aliases": {
+                "LaraCache": "Hcs\\LaraCache\\Facades\\LaraCache"
+            }
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "analyse": "vendor/bin/phpstan analyse",
+        "format": "vendor/bin/pint"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
