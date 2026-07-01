@@ -2,9 +2,13 @@
 
 All notable changes to `laracache` will be documented in this file.
 
-## Unreleased
+## 0.1.0 - 2026-07-02
 
-### Added (round 2)
+Initial release.
+
+### Added
+- `Cacheable` trait: transparent, self-invalidating query caching for Eloquent
+  models via a single trait.
 - Row-level caching: canonical `find($id)` lookups are cached under a stable
   per-row key and survive writes to other rows (version-counter stores).
 - Opt-in caching mode (`mode => 'opt-in'`) with `->cache()` / `Model::cache()`.
@@ -12,9 +16,7 @@ All notable changes to `laracache` will be documented in this file.
 - `LaraCache::fake()` test double with `assertFlushed`, `assertNotFlushed`,
   `assertNothingFlushed`, `assertHit`, and `assertMissed`.
 - Laravel Octane safety: process-static flush state resets each request/task/tick.
-
-### Added
-- Read caching moved to the base query builder (`runSelect`), so `get`,
+- Read caching at the base query builder (`runSelect`), so `get`,
   `first`, `find`, `pluck`, `value`, aggregates (`count`/`sum`/`avg`/`min`/`max`),
   `exists`, and pagination counts are all cached uniformly.
 - Automatic invalidation on **every** write path, including bulk query-builder
@@ -34,7 +36,3 @@ All notable changes to `laracache` will be documented in this file.
 - Optional hit/miss statistics (`stats`).
 - `LaraCache` facade and `laracache:flush`, `laracache:clear`,
   `laracache:warm`, and `laracache:stats` Artisan commands.
-
-## 0.1.0
-
-- Initial release: `Cacheable` trait with version-based invalidation.
