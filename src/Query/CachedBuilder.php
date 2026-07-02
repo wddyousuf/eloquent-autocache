@@ -48,9 +48,13 @@ class CachedBuilder extends Builder
         // Fetch through a cache-disabled clone so the miss isn't ALSO stored by
         // the query-level cache (which would cache a null result and duplicate
         // hits). The row cache is the single home for canonical finds.
+        $cachedBase = $base instanceof CachedQueryBuilder ? $base : null;
+
         return $model->rememberRowInCache(
             $id,
-            fn () => (clone $this)->withoutCache()->whereKey($id)->first($columns)
+            fn () => (clone $this)->withoutCache()->whereKey($id)->first($columns),
+            $cachedBase?->getCacheTtlOverride(),
+            $cachedBase?->hasCacheTtlOverride() ?? false
         );
     }
 

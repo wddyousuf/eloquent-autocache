@@ -102,8 +102,9 @@ Post::where('published', true)->get();   // fresh from the DB again
 ## What triggers a flush
 
 - `create` / `save` / `update` / `delete` / `restore` / `forceDelete`
-- Bulk `Post::where(...)->update()` / `->delete()`
-- Raw `insert` / `upsert` / `insertOrIgnore`
+- Bulk `Post::where(...)->update()` / `->delete()` (including joined updates)
+- Raw `insert` / `upsert` / `insertOrIgnore` / `insertUsing` / `insertOrIgnoreUsing`
+- `updateFrom`
 - `increment` / `decrement`
 - `truncate`
 - The `*Quietly()` variants (`saveQuietly`, `updateQuietly`, …)
@@ -112,7 +113,7 @@ Post::where('published', true)->get();   // fresh from the DB again
 
 ```php
 Post::withoutCache()->get();              // skip the cache for this query
-Post::cacheFor(60)->get();                // custom TTL (seconds) for this query
+Post::cacheFor(60)->get();                // custom TTL (seconds; null = forever) for this query
 Post::cache()->where('active', 1)->get(); // explicitly opt in (opt-in mode)
 Post::query()->cacheKey('homepage')->get(); // use a fixed cache key
 ```

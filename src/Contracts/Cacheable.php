@@ -21,7 +21,9 @@ interface Cacheable
 
     public function cacheKeyFor(QueryBuilder $query, array $columns = ['*'], string $type = 'get'): string;
 
-    public function rememberInCache(string $key, Closure $callback, ?int $ttlOverride = null): mixed;
+    public function cacheKeyForCustom(string $name, string $type = 'select'): string;
+
+    public function rememberInCache(string $key, Closure $callback, ?int $ttlOverride = null, bool $hasTtlOverride = false): mixed;
 
     public function flushCache(): void;
 
@@ -41,7 +43,7 @@ interface Cacheable
 
     public function rowCacheEnabled(): bool;
 
-    public function rememberRowInCache(mixed $id, Closure $callback): mixed;
+    public function rememberRowInCache(mixed $id, Closure $callback, ?int $ttlOverride = null, bool $hasTtlOverride = false): mixed;
 
     /** @return array<int, \Illuminate\Contracts\Database\Query\Builder|Builder> */
     public function cacheWarmupQueries(): array;

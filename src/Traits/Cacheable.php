@@ -249,6 +249,22 @@ trait Cacheable
         return $key.':'.$signature;
     }
 
+    /**
+     * Build the cache key for a user-supplied fixed name (->cacheKey('...')).
+     * The name stays stable across queries, but the model version is still
+     * baked in (version mode) so writes invalidate it like any derived key.
+     */
+    public function cacheKeyForCustom(string $name, string $type = 'select'): string
+    {
+        $key = $this->cachePrefix();
+
+        if (! $this->cacheUsesTags()) {
+            $key .= ':v'.$this->getCacheVersion();
+        }
+
+        return $key.':custom:'.$type.':'.$name;
+    }
+
     // ---------------------------------------------------------------------
     // Read execution (called by CachedQueryBuilder)
     // ---------------------------------------------------------------------
@@ -256,8 +272,11 @@ trait Cacheable
     /**
      * Fetch a value from cache or compute and store it, with hit/miss events,
      * stampede protection and a result-size guard.
+     *
+     * $hasTtlOverride distinguishes "no override" from an explicit override to
+     * null (cacheFor(null) = cache forever).
      */
-    public function rememberInCache(string $key, Closure $callback, ?int $ttlOverride = null): mixed
+    public function rememberInCache(string $key, Closure $callback, ?int $ttlOverride = null, bool $hasTtlOverride = false): mixed
     {
         $store = $this->cacheStore();
         $miss = new \stdClass;
@@ -268,7 +287,9 @@ trait Cacheable
         $this->recordCacheStat($isHit ? 'hits' : 'misses');
         event($isHit ? new CacheHit($this, $key) : new CacheMissed($this, $key));
 
-        $ttl = $ttlOverride ?? $this->cacheTtlForStorage();
+        $ttl = ($hasTtlOverride || $ttlOverride !== null)
+            ? $ttlOverride
+            : $this->cacheTtlForStorage();
 
         // Stale-while-revalidate (Laravel 11+): serve the value instantly and
         // refresh it in the background once it passes the fresh window. Only
@@ -569,8 +590,11 @@ trait Cacheable
     /**
      * Cache a single-row find() under a stable per-id key. Null results are
      * not cached, so a later insert of that id is picked up without staleness.
+     *
+     * $hasTtlOverride distinguishes "no override" from an explicit override to
+     * null (cacheFor(null) = cache forever).
      */
-    public function rememberRowInCache(mixed $id, Closure $callback): mixed
+    public function rememberRowInCache(mixed $id, Closure $callback, ?int $ttlOverride = null, bool $hasTtlOverride = false): mixed
     {
         $store = $this->rowCacheStore($id);
         $key = $this->rowCacheKey($id);
@@ -591,7 +615,9 @@ trait Cacheable
         $value = $callback();
 
         if ($value !== null) {
-            $ttl = $this->cacheTtlForStorage();
+            $ttl = ($hasTtlOverride || $ttlOverride !== null)
+                ? $ttlOverride
+                : $this->cacheTtlForStorage();
 
             $ttl === null
                 ? $store->forever($key, $value)

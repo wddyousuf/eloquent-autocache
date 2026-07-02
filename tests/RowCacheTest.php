@@ -3,6 +3,7 @@
 namespace Hcs\LaraCache\Tests;
 
 use Hcs\LaraCache\Tests\Models\Post;
+use Illuminate\Support\Facades\DB;
 
 class RowCacheTest extends TestCase
 {
@@ -69,5 +70,45 @@ class RowCacheTest extends TestCase
     {
         $this->assertNotNull(Post::where('published', true)->find(1));
         $this->assertNull(Post::where('published', false)->find(1));
+    }
+
+    public function test_joined_update_flushes_the_row_it_actually_updated(): void
+    {
+        DB::table('comments')->insert(['post_id' => 2, 'body' => 'x']); // comment 1 -> post 2
+
+        Post::find(1);
+        Post::find(2); // warm both rows
+
+        // "comments.id = 1" targets post 2 — it must not be mistaken for the
+        // posts primary key (which would surgically drop the wrong row).
+        Post::query()
+            ->join('comments', 'comments.post_id', '=', 'posts.id')
+            ->where('comments.id', 1)
+            ->update(['title' => 'updated-via-join']);
+
+        $this->assertSame('updated-via-join', Post::find(2)->title);
+    }
+
+    public function test_qualified_key_update_is_still_surgical(): void
+    {
+        Post::find(1);
+        Post::find(2);
+
+        Post::where('posts.id', 2)->update(['title' => 'changed']);
+
+        $this->assertSame(0, $this->countSelects(fn () => Post::find(1)));
+        $this->assertSame(1, $this->countSelects(fn () => Post::find(2)));
+    }
+
+    public function test_find_respects_cache_for_ttl(): void
+    {
+        Post::cacheFor(1)->find(1); // default TTL is forever; override to 1s
+
+        $selects = $this->countSelects(function () {
+            $this->travel(5)->seconds();
+            Post::cacheFor(1)->find(1);
+        });
+
+        $this->assertSame(1, $selects, 'row cache must honor the cacheFor() TTL');
     }
 }

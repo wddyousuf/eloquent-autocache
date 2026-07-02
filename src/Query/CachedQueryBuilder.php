@@ -31,6 +31,9 @@ class CachedQueryBuilder extends QueryBuilder
 
     protected ?int $cacheTtlOverride = null;
 
+    /** Distinguishes cacheFor(null) ("forever") from "no override set". */
+    protected bool $cacheTtlOverridden = false;
+
     protected ?string $cacheKeyOverride = null;
 
     /**
@@ -53,9 +56,20 @@ class CachedQueryBuilder extends QueryBuilder
     public function cacheFor(?int $ttl): static
     {
         $this->cacheTtlOverride = $ttl;
+        $this->cacheTtlOverridden = true;
         $this->cacheOptIn = true;
 
         return $this;
+    }
+
+    public function getCacheTtlOverride(): ?int
+    {
+        return $this->cacheTtlOverride;
+    }
+
+    public function hasCacheTtlOverride(): bool
+    {
+        return $this->cacheTtlOverridden;
     }
 
     public function cache(): static
@@ -125,13 +139,15 @@ class CachedQueryBuilder extends QueryBuilder
             return parent::runSelect();
         }
 
-        $key = $this->cacheKeyOverride
-            ?? $this->cacheModel->cacheKeyFor($this, (array) ($this->columns ?? ['*']), 'select');
+        $key = $this->cacheKeyOverride !== null
+            ? $this->cacheModel->cacheKeyForCustom($this->cacheKeyOverride, 'select')
+            : $this->cacheModel->cacheKeyFor($this, (array) ($this->columns ?? ['*']), 'select');
 
         return $this->cacheModel->rememberInCache(
             $key,
             fn () => parent::runSelect(),
-            $this->cacheTtlOverride
+            $this->cacheTtlOverride,
+            $this->cacheTtlOverridden
         );
     }
 
@@ -141,12 +157,15 @@ class CachedQueryBuilder extends QueryBuilder
             return parent::exists();
         }
 
-        $key = $this->cacheModel->cacheKeyFor($this, ['*'], 'exists');
+        $key = $this->cacheKeyOverride !== null
+            ? $this->cacheModel->cacheKeyForCustom($this->cacheKeyOverride, 'exists')
+            : $this->cacheModel->cacheKeyFor($this, ['*'], 'exists');
 
         return $this->cacheModel->rememberInCache(
             $key,
             fn () => parent::exists(),
-            $this->cacheTtlOverride
+            $this->cacheTtlOverride,
+            $this->cacheTtlOverridden
         );
     }
 
@@ -172,6 +191,16 @@ class CachedQueryBuilder extends QueryBuilder
         return tap(parent::insertGetId($values, $sequence), fn () => $this->flushOnWrite('queries'));
     }
 
+    public function insertUsing(array $columns, $query)
+    {
+        return tap(parent::insertUsing($columns, $query), fn () => $this->flushOnWrite('queries'));
+    }
+
+    public function insertOrIgnoreUsing(array $columns, $query)
+    {
+        return tap(parent::insertOrIgnoreUsing($columns, $query), fn () => $this->flushOnWrite('queries'));
+    }
+
     // Upsert may update unknown existing rows, so it flushes everything.
 
     public function upsert(array $values, $uniqueBy, $update = null)
@@ -184,6 +213,13 @@ class CachedQueryBuilder extends QueryBuilder
     public function update(array $values)
     {
         return tap(parent::update($values), fn () => $this->flushOnWrite('auto'));
+    }
+
+    // updateFrom joins against other tables, so the touched rows are unknown.
+
+    public function updateFrom(array $values)
+    {
+        return tap(parent::updateFrom($values), fn () => $this->flushOnWrite('full'));
     }
 
     public function delete($id = null)
@@ -251,6 +287,12 @@ class CachedQueryBuilder extends QueryBuilder
             return null;
         }
 
+        // A join can touch rows whose key never appears in the wheres (and an
+        // `id = ?` there may belong to the joined table), so never go surgical.
+        if (! empty($this->joins)) {
+            return null;
+        }
+
         $wheres = $this->wheres;
 
         if ($wheres === []) {
@@ -280,6 +322,14 @@ class CachedQueryBuilder extends QueryBuilder
     {
         $parts = explode('.', $column);
 
-        return end($parts) === $this->cacheModel->getKeyName();
+        if (count($parts) === 1) {
+            return $parts[0] === $this->cacheModel->getKeyName();
+        }
+
+        // Qualified columns must belong to the model's own table; anything
+        // else (another table, an alias we can't verify) is not "the key".
+        return count($parts) === 2
+            && $parts[0] === $this->cacheModel->getTable()
+            && $parts[1] === $this->cacheModel->getKeyName();
     }
 }

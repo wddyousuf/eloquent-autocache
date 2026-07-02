@@ -2,6 +2,23 @@
 
 All notable changes to `laracache` will be documented in this file.
 
+## Unreleased
+
+### Fixed
+- Custom `->cacheKey()` results are now invalidated on writes when using
+  version-counter stores (previously they were only ever evicted by TTL).
+- `->cacheKey()` is now honored by `exists()` as well as `runSelect()`.
+- Joined updates (e.g. `Post::join(...)->where('comments.id', 1)->update(...)`)
+  no longer mistake the joined table's key for the model's primary key, which
+  could leave a stale row cache for the row actually updated. Writes with
+  joins now always trigger a full flush, and qualified key columns must belong
+  to the model's own table to qualify for a surgical single-row flush.
+- `insertUsing()`, `insertOrIgnoreUsing()`, and `updateFrom()` now flush the
+  cache like every other write path.
+- `cacheFor(null)` now caches forever as documented, instead of silently
+  falling back to the default TTL.
+- Row-level `find()` caching now honors a `cacheFor()` TTL override.
+
 ## 0.1.0 - 2026-07-02
 
 Initial release.

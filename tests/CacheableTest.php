@@ -97,6 +97,20 @@ class CacheableTest extends TestCase
         $this->assertCount(2, Post::all());
     }
 
+    public function test_cache_for_null_caches_forever(): void
+    {
+        config(['laracache.ttl' => 1]);
+
+        Post::cacheFor(null)->get();
+
+        $selects = $this->countSelects(function () {
+            $this->travel(5)->seconds();
+            Post::cacheFor(null)->get();
+        });
+
+        $this->assertSame(0, $selects, 'cacheFor(null) must outlive the default TTL');
+    }
+
     public function test_increment_flushes_the_cache(): void
     {
         $post = Post::find(1);

@@ -48,6 +48,49 @@ class InvalidationTest extends TestCase
         $this->assertSame(1, $selects, 'Parent cache should have been invalidated.');
     }
 
+    public function test_custom_cache_key_is_invalidated_on_write(): void
+    {
+        $this->assertCount(2, Post::query()->cacheKey('homepage')->get());
+
+        Post::create(['title' => 'third']);
+
+        $this->assertCount(3, Post::query()->cacheKey('homepage')->get());
+    }
+
+    public function test_custom_cache_key_still_caches(): void
+    {
+        $selects = $this->countSelects(function () {
+            Post::query()->cacheKey('homepage')->get();
+            Post::query()->cacheKey('homepage')->get();
+        });
+
+        $this->assertSame(1, $selects);
+    }
+
+    public function test_insert_using_flushes(): void
+    {
+        $this->assertSame(2, Post::count());
+
+        Post::query()->getQuery()->insertUsing(
+            ['title', 'published', 'views'],
+            DB::table('posts')->select(['title', 'published', 'views'])->where('id', 1)
+        );
+
+        $this->assertSame(3, Post::count());
+    }
+
+    public function test_insert_or_ignore_using_flushes(): void
+    {
+        $this->assertSame(2, Post::count());
+
+        Post::query()->getQuery()->insertOrIgnoreUsing(
+            ['title', 'published', 'views'],
+            DB::table('posts')->select(['title', 'published', 'views'])->where('id', 1)
+        );
+
+        $this->assertSame(3, Post::count());
+    }
+
     public function test_rollback_does_not_leave_stale_cache(): void
     {
         $this->assertCount(2, Post::all());
