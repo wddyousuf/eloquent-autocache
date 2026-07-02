@@ -4,6 +4,7 @@ namespace Hcs\LaraCache;
 
 use Hcs\LaraCache\Contracts\Cacheable;
 use Hcs\LaraCache\Facades\LaraCache;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
@@ -108,6 +109,54 @@ class CacheManager
         }
 
         return $warmed;
+    }
+
+    /**
+     * Warm every registered model. Returns the queries warmed per model.
+     *
+     * @return array<class-string<Model>, int>
+     */
+    public function warmAll(): array
+    {
+        $results = [];
+
+        foreach ($this->registeredModels() as $class) {
+            if (is_subclass_of($class, Model::class)) {
+                $results[$class] = $this->warm($class);
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Reset the hit/miss counters for one model, or (with no argument) the
+     * global counters plus every registered model's counters.
+     */
+    public function resetStats(Model|string|null $model = null): void
+    {
+        if ($model !== null) {
+            $instance = $this->resolve($model);
+            $this->forgetStatKeys($instance->rawCacheStore(), $instance->cachePrefix());
+
+            return;
+        }
+
+        $this->forgetStatKeys(Cache::store(config('laracache.store')), 'laracache');
+
+        foreach ($this->registeredModels() as $class) {
+            if (is_subclass_of($class, Model::class)) {
+                /** @var Model&Cacheable $instance */
+                $instance = new $class;
+                $this->forgetStatKeys($instance->rawCacheStore(), $instance->cachePrefix());
+            }
+        }
+    }
+
+    protected function forgetStatKeys(CacheRepository $store, string $prefix): void
+    {
+        $store->forget("{$prefix}:stats:hits");
+        $store->forget("{$prefix}:stats:misses");
     }
 
     /**

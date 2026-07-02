@@ -35,7 +35,7 @@ class CachedBuilder extends Builder
             return parent::find($id, $columns);
         }
 
-        if (config('laracache.mode', 'auto') === 'opt-in'
+        if ($model->cacheMode() === 'opt-in'
             && $base instanceof CachedQueryBuilder
             && ! $base->isCacheOptedIn()) {
             return parent::find($id, $columns);

@@ -8,18 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class StatsCommand extends Command
 {
-    protected $signature = 'laracache:stats {model? : Optional model to scope the stats to}';
+    protected $signature = 'laracache:stats
+        {model? : Optional model to scope the stats to}
+        {--reset : Reset the counters instead of displaying them}';
 
     protected $description = 'Show LaraCache hit/miss statistics';
 
     public function handle(CacheManager $cache): int
     {
-        if (! config('laracache.stats', false)) {
-            $this->components->warn('Stats are disabled. Set LARACACHE_STATS=true to collect them.');
-
-            return self::SUCCESS;
-        }
-
         $target = null;
 
         if ($model = $this->argument('model')) {
@@ -30,6 +26,19 @@ class StatsCommand extends Command
 
                 return self::FAILURE;
             }
+        }
+
+        if ($this->option('reset')) {
+            $cache->resetStats($target);
+            $this->components->info('Statistics reset for '.($target ?? 'all models').'.');
+
+            return self::SUCCESS;
+        }
+
+        if (! config('laracache.stats', false)) {
+            $this->components->warn('Stats are disabled. Set LARACACHE_STATS=true to collect them.');
+
+            return self::SUCCESS;
         }
 
         $stats = $cache->stats($target);

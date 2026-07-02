@@ -39,4 +39,18 @@ class SwrTest extends TestCase
 
         $this->assertCount(3, Post::all());
     }
+
+    public function test_swr_does_not_bypass_the_max_rows_guard(): void
+    {
+        config()->set('laracache.ttl', 60);
+        config()->set('laracache.swr', 30);
+        config()->set('laracache.max_rows', 1); // we have 2 posts
+
+        $selects = $this->countSelects(function () {
+            Post::all();
+            Post::all();
+        });
+
+        $this->assertSame(2, $selects, 'Oversized result must not be stored, even under SWR.');
+    }
 }

@@ -96,12 +96,15 @@ class CachedQueryBuilder extends QueryBuilder
      */
     protected function cacheable(): bool
     {
-        if (config('laracache.mode', 'auto') === 'opt-in' && ! $this->cacheOptIn) {
+        if ($this->cacheModel === null) {
+            return false;
+        }
+
+        if ($this->cacheModel->cacheMode() === 'opt-in' && ! $this->cacheOptIn) {
             return false;
         }
 
         return $this->cacheEnabled
-            && $this->cacheModel !== null
             && $this->cacheModel->cacheIsEnabled()
             && ! $this->queryIsVolatile();
     }

@@ -96,6 +96,8 @@ return [
     | "opt-in" — cache only queries that explicitly call ->cache() / ->cacheFor()
     |            (or Model::cache() / Model::cacheFor()).
     |
+    | Individual models can override this with a $cacheMode property.
+    |
     */
 
     'mode' => env('LARACACHE_MODE', 'auto'),
@@ -119,7 +121,8 @@ return [
     |
     | Seconds of "stale grace" after a key's TTL during which the old value is
     | served instantly while a fresh one is computed in the background. Needs
-    | Laravel 11+ (Cache::flexible). 0 disables.
+    | Laravel 11+ (Cache::flexible). 0 disables. Skipped for models with a
+    | max_rows cap, where the size guard must run on every store.
     |
     */
 

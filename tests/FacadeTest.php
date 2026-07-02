@@ -42,6 +42,44 @@ class FacadeTest extends TestCase
         $this->assertSame(0, $selects);
     }
 
+    public function test_warm_all_command_populates_registered_models(): void
+    {
+        config()->set('laracache.models', [Post::class]);
+
+        $this->artisan('laracache:warm', ['--all' => true])->assertSuccessful();
+
+        $selects = $this->countSelects(fn () => Post::all());
+        $this->assertSame(0, $selects);
+    }
+
+    public function test_warm_command_requires_a_model_or_all(): void
+    {
+        $this->artisan('laracache:warm')->assertFailed();
+    }
+
+    public function test_stats_can_be_reset(): void
+    {
+        config()->set('laracache.stats', true);
+
+        Post::all(); // one miss
+        $this->assertGreaterThan(0, LaraCache::stats()['misses']);
+
+        LaraCache::resetStats();
+
+        $this->assertSame(['hits' => 0, 'misses' => 0], LaraCache::stats());
+    }
+
+    public function test_stats_reset_command_runs(): void
+    {
+        config()->set('laracache.stats', true);
+
+        Post::all();
+
+        $this->artisan('laracache:stats', ['--reset' => true])->assertSuccessful();
+
+        $this->assertSame(['hits' => 0, 'misses' => 0], LaraCache::stats());
+    }
+
     public function test_flush_command_runs(): void
     {
         $this->artisan('laracache:flush', ['model' => Post::class])

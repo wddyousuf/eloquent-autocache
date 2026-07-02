@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Cache;
  *   protected $cacheStore    = 'redis';       // store name
  *   protected $cacheTtl      = 600;           // seconds; null = forever
  *   protected $cacheEnabled  = true;          // toggle caching for this model
+ *   protected $cacheMode     = 'opt-in';      // 'auto' or 'opt-in' for this model
  *   protected $cacheTags     = ['catalog'];   // extra tags (tag mode)
  *   protected $cacheMaxRows  = 5000;          // skip caching larger results
  *   protected $flushRelated  = ['comments'];  // relations/models to co-flush
@@ -115,6 +116,15 @@ trait Cacheable
     {
         return (bool) config('laracache.enabled', true)
             && (bool) $this->cacheOption('cacheEnabled', true);
+    }
+
+    /**
+     * The caching mode for this model: 'auto' (cache every read) or 'opt-in'
+     * (cache only ->cache()/->cacheFor() queries). Overrides the global mode.
+     */
+    public function cacheMode(): string
+    {
+        return (string) $this->cacheOption('cacheMode', config('laracache.mode', 'auto'));
     }
 
     /**
@@ -294,7 +304,12 @@ trait Cacheable
         // Stale-while-revalidate (Laravel 11+): serve the value instantly and
         // refresh it in the background once it passes the fresh window. Only
         // meaningful with a finite TTL and a store that supports flexible().
-        if ($ttl !== null && $this->swrWindow() > 0 && method_exists($store, 'flexible')) {
+        // flexible() stores unconditionally, so a model with a max_rows cap
+        // must use the standard path where the size guard can apply.
+        if ($ttl !== null
+            && $this->swrWindow() > 0
+            && $this->cacheMaxRows() === null
+            && method_exists($store, 'flexible')) {
             return $store->flexible($key, [$ttl, $ttl + $this->swrWindow()], $callback);
         }
 

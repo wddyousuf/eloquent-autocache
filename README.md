@@ -137,6 +137,17 @@ Post::cache()->get();        // cached
 Post::cacheFor(120)->get();  // cached (cacheFor implies opt-in)
 ```
 
+The mode can also be set per model, overriding the global setting:
+
+```php
+class AuditLog extends Model
+{
+    use Cacheable;
+
+    protected $cacheMode = 'opt-in'; // or 'auto'
+}
+```
+
 Writes always flush, regardless of mode.
 
 ## Row-level caching
@@ -193,6 +204,9 @@ background (via `Cache::flexible()`):
 'swr' => 30,   // then served stale for up to 30s more while refreshing
 ```
 
+SWR needs a finite TTL, and it is skipped for models with a `max_rows` cap
+(the background refresh cannot apply the size guard).
+
 ## Facade & Artisan commands
 
 ```php
@@ -201,14 +215,18 @@ use Hcs\LaraCache\Facades\LaraCache;
 LaraCache::flush(Post::class);   // flush one model
 LaraCache::clear();              // flush all registered models
 LaraCache::warm(Post::class);    // pre-populate a model's cache
+LaraCache::warmAll();            // warm every registered model
 LaraCache::stats();              // ['hits' => ..., 'misses' => ...]
+LaraCache::resetStats();         // zero the counters (optionally per model)
 ```
 
 ```bash
 php artisan laracache:flush "App\Models\Post"
 php artisan laracache:clear
 php artisan laracache:warm "App\Models\Post"
+php artisan laracache:warm --all
 php artisan laracache:stats
+php artisan laracache:stats --reset
 ```
 
 Customize what warming runs by overriding `cacheWarmupQueries()` on the model:
@@ -302,6 +320,7 @@ class Post extends Model
     protected $cacheStore   = 'redis';     // this model's store
     protected $cacheTtl     = 600;         // seconds; null = forever
     protected $cacheEnabled = true;        // disable caching for just this model
+    protected $cacheMode    = 'opt-in';    // 'auto' or 'opt-in' for this model
     protected $cacheTags    = ['catalog']; // extra tags (tag mode)
     protected $cacheMaxRows = 5000;        // skip caching larger results
     protected $flushRelated = ['comments'];// relations/models to co-flush
@@ -326,6 +345,10 @@ Nothing to configure.
 - The **version counter** on non-atomic stores (`file`) can, under heavy
   concurrent writes, briefly miss an increment. Use an atomic store (redis,
   memcached) or a taggable store for high-write workloads.
+- The **`array` store** keeps values by reference, so repeated `find($id)`
+  calls return the *same* model instance — unsaved attribute changes on it
+  will be visible to later calls. Serializing stores (redis, file, database,
+  memcached) are unaffected.
 
 ## Contributing
 

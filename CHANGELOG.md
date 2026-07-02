@@ -4,6 +4,14 @@ All notable changes to `laracache` will be documented in this file.
 
 ## Unreleased
 
+### Added
+- Per-model caching mode: declare `protected $cacheMode = 'opt-in'` (or
+  `'auto'`) on a model to override the global `mode` setting.
+- `laracache:warm --all` and `LaraCache::warmAll()` to warm every registered
+  model at once.
+- `laracache:stats --reset` and `LaraCache::resetStats()` to zero the hit/miss
+  counters, globally or per model.
+
 ### Fixed
 - Custom `->cacheKey()` results are now invalidated on writes when using
   version-counter stores (previously they were only ever evicted by TTL).
@@ -18,6 +26,8 @@ All notable changes to `laracache` will be documented in this file.
 - `cacheFor(null)` now caches forever as documented, instead of silently
   falling back to the default TTL.
 - Row-level `find()` caching now honors a `cacheFor()` TTL override.
+- Stale-while-revalidate no longer bypasses the `max_rows` size guard; models
+  with a row cap fall back to the standard caching path.
 
 ## 0.1.0 - 2026-07-02
 
