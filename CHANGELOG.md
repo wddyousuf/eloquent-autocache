@@ -3,39 +3,6 @@
 All notable changes to `wddyousuf/eloquent-autocache` will be documented in
 this file.
 
-## Unreleased
-
-### Changed
-- Rebranded from `hcs/laracache` to `wddyousuf/eloquent-autocache` before
-  first Packagist release. Everything follows: namespace `Wddyousuf\AutoCache`,
-  facade `AutoCache`, config `config/autocache.php`, env vars `AUTOCACHE_*`,
-  and Artisan commands `autocache:*`.
-
-### Added
-- Per-model caching mode: declare `protected $cacheMode = 'opt-in'` (or
-  `'auto'`) on a model to override the global `mode` setting.
-- `autocache:warm --all` and `AutoCache::warmAll()` to warm every registered
-  model at once.
-- `autocache:stats --reset` and `AutoCache::resetStats()` to zero the hit/miss
-  counters, globally or per model.
-
-### Fixed
-- Custom `->cacheKey()` results are now invalidated on writes when using
-  version-counter stores (previously they were only ever evicted by TTL).
-- `->cacheKey()` is now honored by `exists()` as well as `runSelect()`.
-- Joined updates (e.g. `Post::join(...)->where('comments.id', 1)->update(...)`)
-  no longer mistake the joined table's key for the model's primary key, which
-  could leave a stale row cache for the row actually updated. Writes with
-  joins now always trigger a full flush, and qualified key columns must belong
-  to the model's own table to qualify for a surgical single-row flush.
-- `insertUsing()`, `insertOrIgnoreUsing()`, and `updateFrom()` now flush the
-  cache like every other write path.
-- `cacheFor(null)` now caches forever as documented, instead of silently
-  falling back to the default TTL.
-- Row-level `find()` caching now honors a `cacheFor()` TTL override.
-- Stale-while-revalidate no longer bypasses the `max_rows` size guard; models
-  with a row cap fall back to the standard caching path.
-
 ## 0.1.0 - 2026-07-02
 
 Initial release.
@@ -45,17 +12,20 @@ Initial release.
   models via a single trait.
 - Row-level caching: canonical `find($id)` lookups are cached under a stable
   per-row key and survive writes to other rows (version-counter stores).
-- Opt-in caching mode (`mode => 'opt-in'`) with `->cache()` / `Model::cache()`.
-- Stale-while-revalidate (`swr`) via `Cache::flexible()` on Laravel 11+.
+- Opt-in caching mode (`mode => 'opt-in'`) with `->cache()` / `Model::cache()`,
+  plus a per-model `$cacheMode` property overriding the global mode.
+- Stale-while-revalidate (`swr`) via `Cache::flexible()` on Laravel 11+
+  (skipped for models with a `max_rows` cap so the size guard always applies).
 - `AutoCache::fake()` test double with `assertFlushed`, `assertNotFlushed`,
   `assertNothingFlushed`, `assertHit`, and `assertMissed`.
 - Laravel Octane safety: process-static flush state resets each request/task/tick.
 - Read caching at the base query builder (`runSelect`), so `get`,
   `first`, `find`, `pluck`, `value`, aggregates (`count`/`sum`/`avg`/`min`/`max`),
   `exists`, and pagination counts are all cached uniformly.
-- Automatic invalidation on **every** write path, including bulk query-builder
-  writes, raw `insert`/`upsert`/`insertOrIgnore`, `increment`/`decrement`,
-  `truncate`, and event-suppressing "quiet" writes.
+- Automatic invalidation on **every** write path, including bulk and joined
+  query-builder writes, raw `insert`/`upsert`/`insertOrIgnore`/`insertUsing`/
+  `insertOrIgnoreUsing`/`updateFrom`, `increment`/`decrement`, `truncate`, and
+  event-suppressing "quiet" writes.
 - Tag-based invalidation, auto-detected on taggable stores, with a version-
   counter fallback for every other store.
 - Relationship-aware invalidation via a `$flushRelated` property.
@@ -69,4 +39,5 @@ Initial release.
 - `CacheHit`, `CacheMissed`, and `CacheFlushed` events.
 - Optional hit/miss statistics (`stats`).
 - `AutoCache` facade and `autocache:flush`, `autocache:clear`,
-  `autocache:warm`, and `autocache:stats` Artisan commands.
+  `autocache:warm` (with `--all`), and `autocache:stats` (with `--reset`)
+  Artisan commands.

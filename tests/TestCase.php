@@ -18,6 +18,10 @@ abstract class TestCase extends Orchestra
 
     protected function defineEnvironment($app): void
     {
+        // Testbench 8 (Laravel 10) defaults to the mysql connection; 9+ already
+        // default to this in-memory sqlite connection.
+        $app['config']->set('database.default', 'testing');
+
         $app['config']->set('cache.default', 'array');
         $app['config']->set('autocache.ttl', null);
         // Deterministic defaults for the core suite; individual tests opt in.
