@@ -31,6 +31,7 @@ other store (`file`, `database`, `array`, …). Either way, it just works.
 - [Per-model overrides](#per-model-overrides)
 - [Laravel Octane](#laravel-octane)
 - [Limitations & notes](#limitations--notes)
+- [Comparison with other packages](#comparison-with-other-packages)
 - [Contributing](#contributing)
 
 ---
@@ -349,6 +350,47 @@ Nothing to configure.
   calls return the *same* model instance — unsaved attribute changes on it
   will be visible to later calls. Serializing stores (redis, file, database,
   memcached) are unaffected.
+
+## Comparison with other packages
+
+Several excellent packages cache Eloquent queries. LaraCache's focus is
+**complete write-path coverage on any cache store** — no Redis requirement,
+and no write that can slip past invalidation.
+
+|                                                        | LaraCache | [laravel-model-caching](https://github.com/mike-bronner/laravel-model-caching) | [eloquent-query-cache](https://github.com/renoki-co/laravel-eloquent-query-cache) | [lada-cache](https://github.com/spiritix/lada-cache) |
+|--------------------------------------------------------|:---------:|:----------------------:|:--------------------:|:----------:|
+| Works on **any** cache store (`file`, `database`, …)   | ✅        | ❌ ¹                   | ⚠️ ²                 | ❌ (Redis only) |
+| Automatic caching (zero per-query code)                | ✅        | ✅                     | ⚠️ ³                 | ✅         |
+| Opt-in / per-query mode                                | ✅        | ❌                     | ✅                   | ❌         |
+| Bulk `where(...)->update()` / `->delete()` flushes     | ✅        | ❌ ⁴                   | ❌ ⁴                 | ✅         |
+| Raw `insert` / `upsert` / `insertUsing` flushes        | ✅        | ❌ ⁴                   | ❌ ⁴                 | ✅         |
+| Quiet writes (`saveQuietly`, …) flush                  | ✅        | ❌ ⁴                   | ❌ ⁴                 | ✅         |
+| Transaction-aware invalidation                         | ✅        | ❌ (manual flush)      | ❌                   | ❌         |
+| Row-level `find()` cache survives other rows' writes   | ✅        | ❌                     | ❌                   | ✅         |
+| Stale-while-revalidate                                 | ✅        | ❌                     | ❌                   | ❌         |
+| Stampede (dog-pile) protection                         | ✅        | ❌                     | ❌                   | ❌         |
+| TTL jitter (anti thundering-herd)                      | ✅        | ❌                     | ❌                   | ❌         |
+| Test fake with assertions (`LaraCache::fake()`)        | ✅        | ❌                     | ❌                   | ❌         |
+| Warm / clear / stats Artisan commands                  | ✅        | ⚠️ (flush)             | ❌                   | ⚠️ (flush) |
+
+¹ Requires Redis, Memcached, APC, or DynamoDB; `file`, `database`, and `array`
+  stores are unsupported.
+² Per-query caching works anywhere, but *automatic* invalidation requires a
+  taggable store.
+³ Caches only queries marked `cacheFor()` (or a model-wide `$cacheFor`
+  property).
+⁴ Invalidation hooks Eloquent model events, so writes that bypass events
+  (bulk builder writes, raw inserts, quiet saves) leave stale cache entries.
+  LaraCache and lada-cache hook the query-builder layer instead.
+
+[rememberable](https://github.com/dwightwatson/rememberable) is also worth a
+mention: a minimal manual `remember($seconds)` per query, with no automatic
+invalidation. And note the identically-named
+[mostafaznv/laracache](https://github.com/mostafaznv/laracache), which is a
+different approach entirely — you predefine named `CacheEntity` queries on the
+model rather than caching reads transparently.
+
+*Based on each package's documentation as of July 2026 — corrections welcome.*
 
 ## Contributing
 
