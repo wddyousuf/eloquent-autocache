@@ -1,10 +1,10 @@
 <?php
 
-namespace Hcs\LaraCache\Tests;
+namespace Wddyousuf\AutoCache\Tests;
 
-use Hcs\LaraCache\Tests\Models\AutoPost;
-use Hcs\LaraCache\Tests\Models\OptInPost;
-use Hcs\LaraCache\Tests\Models\Post;
+use Wddyousuf\AutoCache\Tests\Models\AutoPost;
+use Wddyousuf\AutoCache\Tests\Models\OptInPost;
+use Wddyousuf\AutoCache\Tests\Models\Post;
 
 class PerModelModeTest extends TestCase
 {
@@ -40,7 +40,7 @@ class PerModelModeTest extends TestCase
 
     public function test_auto_model_caches_under_global_opt_in_mode(): void
     {
-        config(['laracache.mode' => 'opt-in']);
+        config(['autocache.mode' => 'opt-in']);
 
         $selects = $this->countSelects(function () {
             AutoPost::all();
@@ -52,7 +52,7 @@ class PerModelModeTest extends TestCase
 
     public function test_model_without_override_follows_the_global_mode(): void
     {
-        config(['laracache.mode' => 'opt-in']);
+        config(['autocache.mode' => 'opt-in']);
 
         $selects = $this->countSelects(function () {
             Post::all();

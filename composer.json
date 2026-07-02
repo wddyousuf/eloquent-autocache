@@ -1,11 +1,11 @@
 {
-    "name": "hcs/laracache",
+    "name": "wddyousuf/eloquent-autocache",
     "description": "Automatic Eloquent model query caching for Laravel with self-flushing on create, update, and delete.",
     "keywords": ["laravel", "eloquent", "cache", "model-caching", "query-cache"],
     "license": "MIT",
     "authors": [
         {
-            "name": "Hudson Creative Studio",
+            "name": "Md. Yousuf Hossain",
             "email": "yousuf@hudsoncreativestudio.com"
         }
     ],
@@ -23,21 +23,21 @@
     },
     "autoload": {
         "psr-4": {
-            "Hcs\\LaraCache\\": "src/"
+            "Wddyousuf\\AutoCache\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Hcs\\LaraCache\\Tests\\": "tests/"
+            "Wddyousuf\\AutoCache\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Hcs\\LaraCache\\LaraCacheServiceProvider"
+                "Wddyousuf\\AutoCache\\AutoCacheServiceProvider"
             ],
             "aliases": {
-                "LaraCache": "Hcs\\LaraCache\\Facades\\LaraCache"
+                "AutoCache": "Wddyousuf\\AutoCache\\Facades\\AutoCache"
             }
         }
     },

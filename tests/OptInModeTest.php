@@ -1,8 +1,8 @@
 <?php
 
-namespace Hcs\LaraCache\Tests;
+namespace Wddyousuf\AutoCache\Tests;
 
-use Hcs\LaraCache\Tests\Models\Post;
+use Wddyousuf\AutoCache\Tests\Models\Post;
 
 class OptInModeTest extends TestCase
 {
@@ -10,7 +10,7 @@ class OptInModeTest extends TestCase
     {
         parent::defineEnvironment($app);
 
-        $app['config']->set('laracache.mode', 'opt-in');
+        $app['config']->set('autocache.mode', 'opt-in');
     }
 
     public function test_reads_are_not_cached_without_opting_in(): void

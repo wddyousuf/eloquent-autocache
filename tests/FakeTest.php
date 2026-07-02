@@ -1,15 +1,15 @@
 <?php
 
-namespace Hcs\LaraCache\Tests;
+namespace Wddyousuf\AutoCache\Tests;
 
-use Hcs\LaraCache\Facades\LaraCache;
-use Hcs\LaraCache\Tests\Models\Post;
+use Wddyousuf\AutoCache\Facades\AutoCache;
+use Wddyousuf\AutoCache\Tests\Models\Post;
 
 class FakeTest extends TestCase
 {
     public function test_fake_records_a_flush_on_write(): void
     {
-        $fake = LaraCache::fake();
+        $fake = AutoCache::fake();
 
         Post::create(['title' => 'x']);
 
@@ -18,7 +18,7 @@ class FakeTest extends TestCase
 
     public function test_fake_records_hits_and_misses(): void
     {
-        $fake = LaraCache::fake();
+        $fake = AutoCache::fake();
 
         Post::all(); // miss
         Post::all(); // hit
@@ -29,7 +29,7 @@ class FakeTest extends TestCase
 
     public function test_fake_asserts_nothing_flushed_on_reads(): void
     {
-        $fake = LaraCache::fake();
+        $fake = AutoCache::fake();
 
         Post::all();
 

@@ -1,10 +1,10 @@
 <?php
 
-namespace Hcs\LaraCache\Query;
+namespace Wddyousuf\AutoCache\Query;
 
-use Hcs\LaraCache\Contracts\Cacheable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Wddyousuf\AutoCache\Contracts\Cacheable;
 
 /**
  * Base query builder that caches reads and flushes on writes.
@@ -116,7 +116,7 @@ class CachedQueryBuilder extends QueryBuilder
     {
         $sql = strtolower($this->toSql());
 
-        foreach ((array) config('laracache.volatile_patterns', []) as $pattern) {
+        foreach ((array) config('autocache.volatile_patterns', []) as $pattern) {
             if ($pattern !== '' && str_contains($sql, strtolower($pattern))) {
                 return true;
             }

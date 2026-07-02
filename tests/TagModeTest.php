@@ -1,8 +1,8 @@
 <?php
 
-namespace Hcs\LaraCache\Tests;
+namespace Wddyousuf\AutoCache\Tests;
 
-use Hcs\LaraCache\Tests\Models\Post;
+use Wddyousuf\AutoCache\Tests\Models\Post;
 
 /**
  * Exercises the tag-based invalidation path (the array store is taggable),
@@ -14,7 +14,7 @@ class TagModeTest extends TestCase
     {
         parent::defineEnvironment($app);
 
-        $app['config']->set('laracache.use_tags', 'auto');
+        $app['config']->set('autocache.use_tags', 'auto');
     }
 
     public function test_model_uses_tags_with_a_taggable_store(): void

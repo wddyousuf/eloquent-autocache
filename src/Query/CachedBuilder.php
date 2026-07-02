@@ -1,14 +1,14 @@
 <?php
 
-namespace Hcs\LaraCache\Query;
+namespace Wddyousuf\AutoCache\Query;
 
-use Hcs\LaraCache\Contracts\Cacheable;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Wddyousuf\AutoCache\Contracts\Cacheable;
 
 /**
- * Eloquent builder whose job is to forward LaraCache's fluent controls to the
+ * Eloquent builder whose job is to forward AutoCache's fluent controls to the
  * underlying {@see CachedQueryBuilder} (keeping the chain returning an Eloquent
  * builder so results stay hydrated as models) and to apply row-level caching
  * for canonical primary-key lookups via find().

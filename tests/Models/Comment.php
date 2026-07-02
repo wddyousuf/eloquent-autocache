@@ -1,10 +1,10 @@
 <?php
 
-namespace Hcs\LaraCache\Tests\Models;
+namespace Wddyousuf\AutoCache\Tests\Models;
 
-use Hcs\LaraCache\Traits\Cacheable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Wddyousuf\AutoCache\Traits\Cacheable;
 
 class Comment extends Model
 {

@@ -3,7 +3,7 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          colors="true">
     <testsuites>
-        <testsuite name="LaraCache Test Suite">
+        <testsuite name="AutoCache Test Suite">
             <directory>tests</directory>
         </testsuite>
     </testsuites>

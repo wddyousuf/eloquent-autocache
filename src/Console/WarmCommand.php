@@ -1,14 +1,14 @@
 <?php
 
-namespace Hcs\LaraCache\Console;
+namespace Wddyousuf\AutoCache\Console;
 
-use Hcs\LaraCache\CacheManager;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
+use Wddyousuf\AutoCache\CacheManager;
 
 class WarmCommand extends Command
 {
-    protected $signature = 'laracache:warm
+    protected $signature = 'autocache:warm
         {model? : Model class (FQCN or App\\Models\\ short name)}
         {--all : Warm every registered model}';
 
@@ -48,7 +48,7 @@ class WarmCommand extends Command
 
         if ($results === []) {
             $this->components->warn(
-                'No cacheable models found. List them in config("laracache.models") '
+                'No cacheable models found. List them in config("autocache.models") '
                 .'so this command can discover them.'
             );
 

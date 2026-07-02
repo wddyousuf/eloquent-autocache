@@ -1,12 +1,12 @@
 <?php
 
-namespace Hcs\LaraCache\Tests;
+namespace Wddyousuf\AutoCache\Tests;
 
-use Hcs\LaraCache\Events\CacheFlushed;
-use Hcs\LaraCache\Events\CacheHit;
-use Hcs\LaraCache\Events\CacheMissed;
-use Hcs\LaraCache\Tests\Models\Post;
 use Illuminate\Support\Facades\Event;
+use Wddyousuf\AutoCache\Events\CacheFlushed;
+use Wddyousuf\AutoCache\Events\CacheHit;
+use Wddyousuf\AutoCache\Events\CacheMissed;
+use Wddyousuf\AutoCache\Tests\Models\Post;
 
 class FeatureTest extends TestCase
 {
@@ -32,7 +32,7 @@ class FeatureTest extends TestCase
 
     public function test_disabled_globally_bypasses_cache(): void
     {
-        config()->set('laracache.enabled', false);
+        config()->set('autocache.enabled', false);
 
         $selects = $this->countSelects(function () {
             Post::all();
@@ -64,7 +64,7 @@ class FeatureTest extends TestCase
 
     public function test_result_larger_than_max_rows_is_not_cached(): void
     {
-        config()->set('laracache.max_rows', 1); // we have 2 posts
+        config()->set('autocache.max_rows', 1); // we have 2 posts
 
         $selects = $this->countSelects(function () {
             Post::all();
@@ -76,7 +76,7 @@ class FeatureTest extends TestCase
 
     public function test_volatile_query_is_not_cached(): void
     {
-        config()->set('laracache.volatile_patterns', ['"posts"']); // force a match
+        config()->set('autocache.volatile_patterns', ['"posts"']); // force a match
 
         $selects = $this->countSelects(function () {
             Post::all();
@@ -88,7 +88,7 @@ class FeatureTest extends TestCase
 
     public function test_caching_works_with_stampede_lock_enabled(): void
     {
-        config()->set('laracache.lock_for', 10); // array store is lock-capable
+        config()->set('autocache.lock_for', 10); // array store is lock-capable
 
         $selects = $this->countSelects(function () {
             Post::all();
@@ -100,13 +100,13 @@ class FeatureTest extends TestCase
 
     public function test_stats_are_collected_when_enabled(): void
     {
-        config()->set('laracache.stats', true);
+        config()->set('autocache.stats', true);
 
         Post::all(); // miss
         Post::all(); // hit
         Post::all(); // hit
 
-        $stats = app('laracache')->stats();
+        $stats = app('autocache')->stats();
         $this->assertSame(1, $stats['misses']);
         $this->assertSame(2, $stats['hits']);
     }

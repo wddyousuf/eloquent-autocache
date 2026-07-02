@@ -1,15 +1,15 @@
 <?php
 
-namespace Hcs\LaraCache;
+namespace Wddyousuf\AutoCache;
 
-use Hcs\LaraCache\Contracts\Cacheable;
-use Hcs\LaraCache\Facades\LaraCache;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Wddyousuf\AutoCache\Contracts\Cacheable;
+use Wddyousuf\AutoCache\Facades\AutoCache;
 
 /**
- * Programmatic entry point behind the LaraCache facade: flush, clear, warm
+ * Programmatic entry point behind the AutoCache facade: flush, clear, warm
  * and inspect stats for cacheable models.
  */
 class CacheManager
@@ -42,12 +42,12 @@ class CacheManager
      * Swap the container/facade binding for a recording fake and return it,
      * so tests can assert on cache behaviour.
      */
-    public static function fake(): LaraCacheFake
+    public static function fake(): AutoCacheFake
     {
-        $fake = new LaraCacheFake;
+        $fake = new AutoCacheFake;
 
-        app()->instance('laracache', $fake);
-        LaraCache::swap($fake);
+        app()->instance('autocache', $fake);
+        AutoCache::swap($fake);
         $fake->listen();
 
         return $fake;
@@ -63,7 +63,7 @@ class CacheManager
     {
         return array_values(array_unique(array_merge(
             array_values(static::$registered),
-            (array) config('laracache.models', [])
+            (array) config('autocache.models', [])
         )));
     }
 
@@ -142,7 +142,7 @@ class CacheManager
             return;
         }
 
-        $this->forgetStatKeys(Cache::store(config('laracache.store')), 'laracache');
+        $this->forgetStatKeys(Cache::store(config('autocache.store')), 'autocache');
 
         foreach ($this->registeredModels() as $class) {
             if (is_subclass_of($class, Model::class)) {
@@ -171,8 +171,8 @@ class CacheManager
             $store = $instance->rawCacheStore();
             $prefix = $instance->cachePrefix();
         } else {
-            $store = Cache::store(config('laracache.store'));
-            $prefix = 'laracache';
+            $store = Cache::store(config('autocache.store'));
+            $prefix = 'autocache';
         }
 
         return [

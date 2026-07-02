@@ -1,8 +1,8 @@
 <?php
 
-namespace Hcs\LaraCache\Tests;
+namespace Wddyousuf\AutoCache\Tests;
 
-use Hcs\LaraCache\Tests\Models\Post;
+use Wddyousuf\AutoCache\Tests\Models\Post;
 
 class AggregateTest extends TestCase
 {

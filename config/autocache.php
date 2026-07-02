@@ -12,20 +12,20 @@ return [
     |
     */
 
-    'enabled' => env('LARACACHE_ENABLED', true),
+    'enabled' => env('AUTOCACHE_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------
     | Cache Store
     |--------------------------------------------------------------------------
     |
-    | Which of your "cache.stores" entries LaraCache should use. Null uses the
+    | Which of your "cache.stores" entries AutoCache should use. Null uses the
     | application default. Any store works — invalidation falls back to a
     | version counter when the store does not support tags.
     |
     */
 
-    'store' => env('LARACACHE_STORE', null),
+    'store' => env('AUTOCACHE_STORE', null),
 
     /*
     |--------------------------------------------------------------------------
@@ -37,7 +37,7 @@ return [
     |
     */
 
-    'ttl' => env('LARACACHE_TTL', 3600),
+    'ttl' => env('AUTOCACHE_TTL', 3600),
 
     /*
     |--------------------------------------------------------------------------
@@ -50,7 +50,7 @@ return [
     |
     */
 
-    'ttl_jitter' => env('LARACACHE_TTL_JITTER', 0.1),
+    'ttl_jitter' => env('AUTOCACHE_TTL_JITTER', 0.1),
 
     /*
     |--------------------------------------------------------------------------
@@ -58,7 +58,7 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'prefix' => env('LARACACHE_PREFIX', 'laracache'),
+    'prefix' => env('AUTOCACHE_PREFIX', 'autocache'),
 
     /*
     |--------------------------------------------------------------------------
@@ -72,7 +72,7 @@ return [
     |
     */
 
-    'use_tags' => env('LARACACHE_USE_TAGS', 'auto'),
+    'use_tags' => env('AUTOCACHE_USE_TAGS', 'auto'),
 
     /*
     |--------------------------------------------------------------------------
@@ -85,7 +85,7 @@ return [
     |
     */
 
-    'lock_for' => env('LARACACHE_LOCK_FOR', 10),
+    'lock_for' => env('AUTOCACHE_LOCK_FOR', 10),
 
     /*
     |--------------------------------------------------------------------------
@@ -100,7 +100,7 @@ return [
     |
     */
 
-    'mode' => env('LARACACHE_MODE', 'auto'),
+    'mode' => env('AUTOCACHE_MODE', 'auto'),
 
     /*
     |--------------------------------------------------------------------------
@@ -112,7 +112,7 @@ return [
     |
     */
 
-    'row_cache' => env('LARACACHE_ROW_CACHE', true),
+    'row_cache' => env('AUTOCACHE_ROW_CACHE', true),
 
     /*
     |--------------------------------------------------------------------------
@@ -126,7 +126,7 @@ return [
     |
     */
 
-    'swr' => env('LARACACHE_SWR', 0),
+    'swr' => env('AUTOCACHE_SWR', 0),
 
     /*
     |--------------------------------------------------------------------------
@@ -138,7 +138,7 @@ return [
     |
     */
 
-    'max_rows' => env('LARACACHE_MAX_ROWS', null),
+    'max_rows' => env('AUTOCACHE_MAX_ROWS', null),
 
     /*
     |--------------------------------------------------------------------------
@@ -159,12 +159,12 @@ return [
     | Statistics
     |--------------------------------------------------------------------------
     |
-    | When true, LaraCache tallies hit/miss counters (global and per-model)
-    | that you can read via `LaraCache::stats()` or `php artisan laracache:stats`.
+    | When true, AutoCache tallies hit/miss counters (global and per-model)
+    | that you can read via `AutoCache::stats()` or `php artisan autocache:stats`.
     |
     */
 
-    'stats' => env('LARACACHE_STATS', false),
+    'stats' => env('AUTOCACHE_STATS', false),
 
     /*
     |--------------------------------------------------------------------------

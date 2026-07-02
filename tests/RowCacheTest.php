@@ -1,9 +1,9 @@
 <?php
 
-namespace Hcs\LaraCache\Tests;
+namespace Wddyousuf\AutoCache\Tests;
 
-use Hcs\LaraCache\Tests\Models\Post;
 use Illuminate\Support\Facades\DB;
+use Wddyousuf\AutoCache\Tests\Models\Post;
 
 class RowCacheTest extends TestCase
 {

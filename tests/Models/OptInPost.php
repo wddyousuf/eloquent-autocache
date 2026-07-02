@@ -1,6 +1,6 @@
 <?php
 
-namespace Hcs\LaraCache\Tests\Models;
+namespace Wddyousuf\AutoCache\Tests\Models;
 
 /** A Post that opts into caching per query, regardless of the global mode. */
 class OptInPost extends Post

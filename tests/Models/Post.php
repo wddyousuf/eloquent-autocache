@@ -1,11 +1,11 @@
 <?php
 
-namespace Hcs\LaraCache\Tests\Models;
+namespace Wddyousuf\AutoCache\Tests\Models;
 
-use Hcs\LaraCache\Traits\Cacheable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Wddyousuf\AutoCache\Traits\Cacheable;
 
 class Post extends Model
 {

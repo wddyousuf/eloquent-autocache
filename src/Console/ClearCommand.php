@@ -1,13 +1,13 @@
 <?php
 
-namespace Hcs\LaraCache\Console;
+namespace Wddyousuf\AutoCache\Console;
 
-use Hcs\LaraCache\CacheManager;
 use Illuminate\Console\Command;
+use Wddyousuf\AutoCache\CacheManager;
 
 class ClearCommand extends Command
 {
-    protected $signature = 'laracache:clear';
+    protected $signature = 'autocache:clear';
 
     protected $description = 'Flush cached queries for every registered cacheable model';
 
@@ -17,7 +17,7 @@ class ClearCommand extends Command
 
         if ($count === 0) {
             $this->components->warn(
-                'No cacheable models found. List them in config("laracache.models") '
+                'No cacheable models found. List them in config("autocache.models") '
                 .'so this command can discover them.'
             );
 

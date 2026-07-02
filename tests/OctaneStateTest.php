@@ -1,9 +1,9 @@
 <?php
 
-namespace Hcs\LaraCache\Tests;
+namespace Wddyousuf\AutoCache\Tests;
 
-use Hcs\LaraCache\CacheManager;
-use Hcs\LaraCache\Tests\Models\Post;
+use Wddyousuf\AutoCache\CacheManager;
+use Wddyousuf\AutoCache\Tests\Models\Post;
 
 class OctaneStateTest extends TestCase
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Hcs\LaraCache\Contracts;
+namespace Wddyousuf\AutoCache\Contracts;
 
 use Closure;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 
 /**
- * The surface the {@see \Hcs\LaraCache\Traits\Cacheable} trait exposes and
+ * The surface the {@see \Wddyousuf\AutoCache\Traits\Cacheable} trait exposes and
  * that the query builders and cache manager rely on. Models using the trait
  * satisfy this contract implicitly; it exists chiefly to give static analysis
  * a precise type for those cross-references.

@@ -1,6 +1,6 @@
 <?php
 
-namespace Hcs\LaraCache\Events;
+namespace Wddyousuf\AutoCache\Events;
 
 use Illuminate\Database\Eloquent\Model;
 

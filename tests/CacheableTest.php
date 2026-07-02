@@ -1,8 +1,8 @@
 <?php
 
-namespace Hcs\LaraCache\Tests;
+namespace Wddyousuf\AutoCache\Tests;
 
-use Hcs\LaraCache\Tests\Models\Post;
+use Wddyousuf\AutoCache\Tests\Models\Post;
 
 class CacheableTest extends TestCase
 {
@@ -99,7 +99,7 @@ class CacheableTest extends TestCase
 
     public function test_cache_for_null_caches_forever(): void
     {
-        config(['laracache.ttl' => 1]);
+        config(['autocache.ttl' => 1]);
 
         Post::cacheFor(null)->get();
 

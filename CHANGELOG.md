@@ -1,15 +1,22 @@
 # Changelog
 
-All notable changes to `laracache` will be documented in this file.
+All notable changes to `wddyousuf/eloquent-autocache` will be documented in
+this file.
 
 ## Unreleased
+
+### Changed
+- Rebranded from `hcs/laracache` to `wddyousuf/eloquent-autocache` before
+  first Packagist release. Everything follows: namespace `Wddyousuf\AutoCache`,
+  facade `AutoCache`, config `config/autocache.php`, env vars `AUTOCACHE_*`,
+  and Artisan commands `autocache:*`.
 
 ### Added
 - Per-model caching mode: declare `protected $cacheMode = 'opt-in'` (or
   `'auto'`) on a model to override the global `mode` setting.
-- `laracache:warm --all` and `LaraCache::warmAll()` to warm every registered
+- `autocache:warm --all` and `AutoCache::warmAll()` to warm every registered
   model at once.
-- `laracache:stats --reset` and `LaraCache::resetStats()` to zero the hit/miss
+- `autocache:stats --reset` and `AutoCache::resetStats()` to zero the hit/miss
   counters, globally or per model.
 
 ### Fixed
@@ -40,7 +47,7 @@ Initial release.
   per-row key and survive writes to other rows (version-counter stores).
 - Opt-in caching mode (`mode => 'opt-in'`) with `->cache()` / `Model::cache()`.
 - Stale-while-revalidate (`swr`) via `Cache::flexible()` on Laravel 11+.
-- `LaraCache::fake()` test double with `assertFlushed`, `assertNotFlushed`,
+- `AutoCache::fake()` test double with `assertFlushed`, `assertNotFlushed`,
   `assertNothingFlushed`, `assertHit`, and `assertMissed`.
 - Laravel Octane safety: process-static flush state resets each request/task/tick.
 - Read caching at the base query builder (`runSelect`), so `get`,
@@ -61,5 +68,5 @@ Initial release.
   static `Model::withoutCache()` / `Model::cacheFor()` entry points.
 - `CacheHit`, `CacheMissed`, and `CacheFlushed` events.
 - Optional hit/miss statistics (`stats`).
-- `LaraCache` facade and `laracache:flush`, `laracache:clear`,
-  `laracache:warm`, and `laracache:stats` Artisan commands.
+- `AutoCache` facade and `autocache:flush`, `autocache:clear`,
+  `autocache:warm`, and `autocache:stats` Artisan commands.

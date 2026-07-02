@@ -1,9 +1,9 @@
 <?php
 
-namespace Hcs\LaraCache\Facades;
+namespace Wddyousuf\AutoCache\Facades;
 
-use Hcs\LaraCache\CacheManager;
 use Illuminate\Support\Facades\Facade;
+use Wddyousuf\AutoCache\CacheManager;
 
 /**
  * @method static void flush(\Illuminate\Database\Eloquent\Model|string $model)
@@ -16,10 +16,10 @@ use Illuminate\Support\Facades\Facade;
  *
  * @see CacheManager
  */
-class LaraCache extends Facade
+class AutoCache extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return 'laracache';
+        return 'autocache';
     }
 }

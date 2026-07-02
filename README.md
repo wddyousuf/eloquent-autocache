@@ -1,4 +1,4 @@
-# LaraCache
+# AutoCache
 
 Automatic, self-invalidating query caching for Eloquent models.
 
@@ -46,16 +46,16 @@ other store (`file`, `database`, `array`, …). Either way, it just works.
 Install via Composer:
 
 ```bash
-composer require hcs/laracache
+composer require wddyousuf/eloquent-autocache
 ```
 
-The service provider and `LaraCache` facade are auto-discovered — no manual
+The service provider and `AutoCache` facade are auto-discovered — no manual
 registration needed.
 
-Optionally publish the config file to `config/laracache.php`:
+Optionally publish the config file to `config/autocache.php`:
 
 ```bash
-php artisan vendor:publish --tag=laracache-config
+php artisan vendor:publish --tag=autocache-config
 ```
 
 That's the whole setup. Every store works out of the box; there's nothing to
@@ -66,7 +66,7 @@ migrate and no external service to run.
 Add the `Cacheable` trait to any Eloquent model:
 
 ```php
-use Hcs\LaraCache\Traits\Cacheable;
+use Wddyousuf\AutoCache\Traits\Cacheable;
 use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model
@@ -128,7 +128,7 @@ By default (`mode => 'auto'`) every read is cached. Set the mode to `opt-in`
 to cache **only** queries you explicitly mark:
 
 ```php
-// config/laracache.php
+// config/autocache.php
 'mode' => 'opt-in',
 ```
 
@@ -200,7 +200,7 @@ On Laravel 11+, serve an expired value instantly while it recomputes in the
 background (via `Cache::flexible()`):
 
 ```php
-// config/laracache.php
+// config/autocache.php
 'ttl' => 60,   // fresh for 60s
 'swr' => 30,   // then served stale for up to 30s more while refreshing
 ```
@@ -211,23 +211,23 @@ SWR needs a finite TTL, and it is skipped for models with a `max_rows` cap
 ## Facade & Artisan commands
 
 ```php
-use Hcs\LaraCache\Facades\LaraCache;
+use Wddyousuf\AutoCache\Facades\AutoCache;
 
-LaraCache::flush(Post::class);   // flush one model
-LaraCache::clear();              // flush all registered models
-LaraCache::warm(Post::class);    // pre-populate a model's cache
-LaraCache::warmAll();            // warm every registered model
-LaraCache::stats();              // ['hits' => ..., 'misses' => ...]
-LaraCache::resetStats();         // zero the counters (optionally per model)
+AutoCache::flush(Post::class);   // flush one model
+AutoCache::clear();              // flush all registered models
+AutoCache::warm(Post::class);    // pre-populate a model's cache
+AutoCache::warmAll();            // warm every registered model
+AutoCache::stats();              // ['hits' => ..., 'misses' => ...]
+AutoCache::resetStats();         // zero the counters (optionally per model)
 ```
 
 ```bash
-php artisan laracache:flush "App\Models\Post"
-php artisan laracache:clear
-php artisan laracache:warm "App\Models\Post"
-php artisan laracache:warm --all
-php artisan laracache:stats
-php artisan laracache:stats --reset
+php artisan autocache:flush "App\Models\Post"
+php artisan autocache:clear
+php artisan autocache:warm "App\Models\Post"
+php artisan autocache:warm --all
+php artisan autocache:stats
+php artisan autocache:stats --reset
 ```
 
 Customize what warming runs by overriding `cacheWarmupQueries()` on the model:
@@ -243,15 +243,15 @@ public function cacheWarmupQueries(): array
 ```
 
 `clear` and `warm` discover models registered at runtime; list any that must
-be reachable before boot in `config('laracache.models')`.
+be reachable before boot in `config('autocache.models')`.
 
 ## Events
 
 Three events are dispatched so you can log or measure cache behavior:
 
-- `Hcs\LaraCache\Events\CacheHit`
-- `Hcs\LaraCache\Events\CacheMissed`
-- `Hcs\LaraCache\Events\CacheFlushed`
+- `Wddyousuf\AutoCache\Events\CacheHit`
+- `Wddyousuf\AutoCache\Events\CacheMissed`
+- `Wddyousuf\AutoCache\Events\CacheFlushed`
 
 Each carries the `$model` (and, for hit/miss, the `$key`).
 
@@ -261,11 +261,11 @@ Swap in a recording fake and assert on cache behavior — no counting SQL by
 hand:
 
 ```php
-use Hcs\LaraCache\Facades\LaraCache;
+use Wddyousuf\AutoCache\Facades\AutoCache;
 
 public function test_publishing_flushes_the_cache(): void
 {
-    $fake = LaraCache::fake();
+    $fake = AutoCache::fake();
 
     Post::factory()->create();
 
@@ -285,7 +285,7 @@ $fake->assertMissed(Post::class); // or assertMissed() for "any"
 
 ## Configuration
 
-`config/laracache.php` (every key is env-driven):
+`config/autocache.php` (every key is env-driven):
 
 | Key                 | Default          | Description                                                        |
 |---------------------|------------------|--------------------------------------------------------------------|
@@ -293,7 +293,7 @@ $fake->assertMissed(Post::class); // or assertMissed() for "any"
 | `store`             | `null`           | Cache store (`null` = app default).                               |
 | `ttl`               | `3600`           | Seconds to cache; `null` = forever.                               |
 | `ttl_jitter`        | `0.1`            | Randomly spread each TTL by ±this fraction (anti thundering-herd). |
-| `prefix`            | `laracache`      | Key prefix.                                                        |
+| `prefix`            | `autocache`      | Key prefix.                                                        |
 | `mode`              | `auto`           | `auto` caches everything; `opt-in` caches only `->cache()` queries. |
 | `row_cache`         | `true`           | Per-row caching for canonical `find($id)`.                        |
 | `swr`               | `0`              | Stale-while-revalidate grace seconds (Laravel 11+; 0 = off).      |
@@ -304,10 +304,10 @@ $fake->assertMissed(Post::class); // or assertMissed() for "any"
 | `stats`             | `false`          | Collect hit/miss counters.                                        |
 | `models`            | `[]`             | Models for `clear`/`warm` to discover before boot.                |
 
-Env variables: `LARACACHE_ENABLED`, `LARACACHE_STORE`, `LARACACHE_TTL`,
-`LARACACHE_TTL_JITTER`, `LARACACHE_PREFIX`, `LARACACHE_MODE`,
-`LARACACHE_ROW_CACHE`, `LARACACHE_SWR`, `LARACACHE_USE_TAGS`,
-`LARACACHE_LOCK_FOR`, `LARACACHE_MAX_ROWS`, `LARACACHE_STATS`.
+Env variables: `AUTOCACHE_ENABLED`, `AUTOCACHE_STORE`, `AUTOCACHE_TTL`,
+`AUTOCACHE_TTL_JITTER`, `AUTOCACHE_PREFIX`, `AUTOCACHE_MODE`,
+`AUTOCACHE_ROW_CACHE`, `AUTOCACHE_SWR`, `AUTOCACHE_USE_TAGS`,
+`AUTOCACHE_LOCK_FOR`, `AUTOCACHE_MAX_ROWS`, `AUTOCACHE_STATS`.
 
 ## Per-model overrides
 
@@ -330,7 +330,7 @@ class Post extends Model
 
 ## Laravel Octane
 
-LaraCache is Octane-safe: it registers listeners on `RequestReceived`,
+AutoCache is Octane-safe: it registers listeners on `RequestReceived`,
 `TaskReceived`, and `TickReceived` to reset its process-static flush guard
 between requests, so a long-lived worker never carries state across requests.
 Nothing to configure.
@@ -342,7 +342,7 @@ Nothing to configure.
   not flush a parent's *root* query unless you wire it up with `$flushRelated`.
 - **`cursor()`** streams and is intentionally never cached.
 - **Direct `DB::table()` writes** bypass Eloquent entirely; call
-  `LaraCache::flush(Model::class)` afterward if you use them.
+  `AutoCache::flush(Model::class)` afterward if you use them.
 - The **version counter** on non-atomic stores (`file`) can, under heavy
   concurrent writes, briefly miss an increment. Use an atomic store (redis,
   memcached) or a taggable store for high-write workloads.
@@ -353,11 +353,11 @@ Nothing to configure.
 
 ## Comparison with other packages
 
-Several excellent packages cache Eloquent queries. LaraCache's focus is
+Several excellent packages cache Eloquent queries. AutoCache's focus is
 **complete write-path coverage on any cache store** — no Redis requirement,
 and no write that can slip past invalidation.
 
-|                                                        | LaraCache | [laravel-model-caching](https://github.com/mike-bronner/laravel-model-caching) | [eloquent-query-cache](https://github.com/renoki-co/laravel-eloquent-query-cache) | [lada-cache](https://github.com/spiritix/lada-cache) |
+|                                                        | AutoCache | [laravel-model-caching](https://github.com/mike-bronner/laravel-model-caching) | [eloquent-query-cache](https://github.com/renoki-co/laravel-eloquent-query-cache) | [lada-cache](https://github.com/spiritix/lada-cache) |
 |--------------------------------------------------------|:---------:|:----------------------:|:--------------------:|:----------:|
 | Works on **any** cache store (`file`, `database`, …)   | ✅        | ❌ ¹                   | ⚠️ ²                 | ❌ (Redis only) |
 | Automatic caching (zero per-query code)                | ✅        | ✅                     | ⚠️ ³                 | ✅         |
@@ -370,7 +370,7 @@ and no write that can slip past invalidation.
 | Stale-while-revalidate                                 | ✅        | ❌                     | ❌                   | ❌         |
 | Stampede (dog-pile) protection                         | ✅        | ❌                     | ❌                   | ❌         |
 | TTL jitter (anti thundering-herd)                      | ✅        | ❌                     | ❌                   | ❌         |
-| Test fake with assertions (`LaraCache::fake()`)        | ✅        | ❌                     | ❌                   | ❌         |
+| Test fake with assertions (`AutoCache::fake()`)        | ✅        | ❌                     | ❌                   | ❌         |
 | Warm / clear / stats Artisan commands                  | ✅        | ⚠️ (flush)             | ❌                   | ⚠️ (flush) |
 
 ¹ Requires Redis, Memcached, APC, or DynamoDB; `file`, `database`, and `array`
@@ -381,12 +381,12 @@ and no write that can slip past invalidation.
   property).
 ⁴ Invalidation hooks Eloquent model events, so writes that bypass events
   (bulk builder writes, raw inserts, quiet saves) leave stale cache entries.
-  LaraCache and lada-cache hook the query-builder layer instead.
+  AutoCache and lada-cache hook the query-builder layer instead.
 
 [rememberable](https://github.com/dwightwatson/rememberable) is also worth a
 mention: a minimal manual `remember($seconds)` per query, with no automatic
-invalidation. And note the identically-named
-[mostafaznv/laracache](https://github.com/mostafaznv/laracache), which is a
+invalidation. And
+[mostafaznv/laracache](https://github.com/mostafaznv/laracache) is a
 different approach entirely — you predefine named `CacheEntity` queries on the
 model rather than caching reads transparently.
 

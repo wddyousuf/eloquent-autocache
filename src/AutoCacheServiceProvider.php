@@ -1,24 +1,24 @@
 <?php
 
-namespace Hcs\LaraCache;
+namespace Wddyousuf\AutoCache;
 
-use Hcs\LaraCache\Console\ClearCommand;
-use Hcs\LaraCache\Console\FlushCommand;
-use Hcs\LaraCache\Console\StatsCommand;
-use Hcs\LaraCache\Console\WarmCommand;
 use Illuminate\Support\ServiceProvider;
+use Wddyousuf\AutoCache\Console\ClearCommand;
+use Wddyousuf\AutoCache\Console\FlushCommand;
+use Wddyousuf\AutoCache\Console\StatsCommand;
+use Wddyousuf\AutoCache\Console\WarmCommand;
 
-class LaraCacheServiceProvider extends ServiceProvider
+class AutoCacheServiceProvider extends ServiceProvider
 {
     /**
      * Register package services and merge the default configuration.
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/laracache.php', 'laracache');
+        $this->mergeConfigFrom(__DIR__.'/../config/autocache.php', 'autocache');
 
-        $this->app->singleton('laracache', fn () => new CacheManager);
-        $this->app->alias('laracache', CacheManager::class);
+        $this->app->singleton('autocache', fn () => new CacheManager);
+        $this->app->alias('autocache', CacheManager::class);
     }
 
     /**
@@ -30,8 +30,8 @@ class LaraCacheServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__.'/../config/laracache.php' => $this->app->configPath('laracache.php'),
-            ], 'laracache-config');
+                __DIR__.'/../config/autocache.php' => $this->app->configPath('autocache.php'),
+            ], 'autocache-config');
 
             $this->commands([
                 FlushCommand::class,

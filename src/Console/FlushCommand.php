@@ -1,14 +1,14 @@
 <?php
 
-namespace Hcs\LaraCache\Console;
+namespace Wddyousuf\AutoCache\Console;
 
-use Hcs\LaraCache\CacheManager;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
+use Wddyousuf\AutoCache\CacheManager;
 
 class FlushCommand extends Command
 {
-    protected $signature = 'laracache:flush {model : Model class (FQCN or App\\Models\\ short name)}';
+    protected $signature = 'autocache:flush {model : Model class (FQCN or App\\Models\\ short name)}';
 
     protected $description = 'Flush the cached queries for a single model';
 

@@ -1,18 +1,18 @@
 <?php
 
-namespace Hcs\LaraCache\Console;
+namespace Wddyousuf\AutoCache\Console;
 
-use Hcs\LaraCache\CacheManager;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
+use Wddyousuf\AutoCache\CacheManager;
 
 class StatsCommand extends Command
 {
-    protected $signature = 'laracache:stats
+    protected $signature = 'autocache:stats
         {model? : Optional model to scope the stats to}
         {--reset : Reset the counters instead of displaying them}';
 
-    protected $description = 'Show LaraCache hit/miss statistics';
+    protected $description = 'Show AutoCache hit/miss statistics';
 
     public function handle(CacheManager $cache): int
     {
@@ -35,8 +35,8 @@ class StatsCommand extends Command
             return self::SUCCESS;
         }
 
-        if (! config('laracache.stats', false)) {
-            $this->components->warn('Stats are disabled. Set LARACACHE_STATS=true to collect them.');
+        if (! config('autocache.stats', false)) {
+            $this->components->warn('Stats are disabled. Set AUTOCACHE_STATS=true to collect them.');
 
             return self::SUCCESS;
         }

@@ -1,14 +1,8 @@
 <?php
 
-namespace Hcs\LaraCache\Traits;
+namespace Wddyousuf\AutoCache\Traits;
 
 use Closure;
-use Hcs\LaraCache\CacheManager;
-use Hcs\LaraCache\Events\CacheFlushed;
-use Hcs\LaraCache\Events\CacheHit;
-use Hcs\LaraCache\Events\CacheMissed;
-use Hcs\LaraCache\Query\CachedBuilder;
-use Hcs\LaraCache\Query\CachedQueryBuilder;
 use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
@@ -17,6 +11,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\Cache;
+use Wddyousuf\AutoCache\CacheManager;
+use Wddyousuf\AutoCache\Events\CacheFlushed;
+use Wddyousuf\AutoCache\Events\CacheHit;
+use Wddyousuf\AutoCache\Events\CacheMissed;
+use Wddyousuf\AutoCache\Query\CachedBuilder;
+use Wddyousuf\AutoCache\Query\CachedQueryBuilder;
 
 /**
  * Add automatic, self-invalidating query caching to an Eloquent model.
@@ -35,14 +35,14 @@ use Illuminate\Support\Facades\Cache;
  *   protected $cacheMaxRows  = 5000;          // skip caching larger results
  *   protected $flushRelated  = ['comments'];  // relations/models to co-flush
  *
- * @method static \Hcs\LaraCache\Query\CachedBuilder query()
+ * @method static \Wddyousuf\AutoCache\Query\CachedBuilder query()
  *
  * @phpstan-require-extends Model
  */
 trait Cacheable
 {
     /** Memoized tag support per cache store name, keyed for the whole process. */
-    protected static array $laracacheTagSupport = [];
+    protected static array $autocacheTagSupport = [];
 
     /**
      * Boot the trait: register the model so console commands can find it.
@@ -114,7 +114,7 @@ trait Cacheable
 
     public function cacheIsEnabled(): bool
     {
-        return (bool) config('laracache.enabled', true)
+        return (bool) config('autocache.enabled', true)
             && (bool) $this->cacheOption('cacheEnabled', true);
     }
 
@@ -124,7 +124,7 @@ trait Cacheable
      */
     public function cacheMode(): string
     {
-        return (string) $this->cacheOption('cacheMode', config('laracache.mode', 'auto'));
+        return (string) $this->cacheOption('cacheMode', config('autocache.mode', 'auto'));
     }
 
     /**
@@ -133,7 +133,7 @@ trait Cacheable
      */
     public function rawCacheStore(): CacheRepository
     {
-        return Cache::store($this->cacheOption('cacheStore', config('laracache.store')));
+        return Cache::store($this->cacheOption('cacheStore', config('autocache.store')));
     }
 
     /**
@@ -159,7 +159,7 @@ trait Cacheable
      */
     public function cacheUsesTags(): bool
     {
-        if (config('laracache.use_tags', 'auto') === false) {
+        if (config('autocache.use_tags', 'auto') === false) {
             return false;
         }
 
@@ -168,24 +168,24 @@ trait Cacheable
 
     protected function storeSupportsTags(): bool
     {
-        $name = $this->cacheOption('cacheStore', config('laracache.store'));
+        $name = $this->cacheOption('cacheStore', config('autocache.store'));
         $memo = $name ?? '@default';
 
-        if (! array_key_exists($memo, static::$laracacheTagSupport)) {
+        if (! array_key_exists($memo, static::$autocacheTagSupport)) {
             try {
-                Cache::store($name)->tags(['laracache:probe']);
-                static::$laracacheTagSupport[$memo] = true;
+                Cache::store($name)->tags(['autocache:probe']);
+                static::$autocacheTagSupport[$memo] = true;
             } catch (\BadMethodCallException) {
-                static::$laracacheTagSupport[$memo] = false;
+                static::$autocacheTagSupport[$memo] = false;
             }
         }
 
-        return static::$laracacheTagSupport[$memo];
+        return static::$autocacheTagSupport[$memo];
     }
 
     public function cacheTtl(): ?int
     {
-        $ttl = $this->cacheOption('cacheTtl', config('laracache.ttl'));
+        $ttl = $this->cacheOption('cacheTtl', config('autocache.ttl'));
 
         return $ttl === null ? null : (int) $ttl;
     }
@@ -201,7 +201,7 @@ trait Cacheable
             return null;
         }
 
-        $jitter = (float) config('laracache.ttl_jitter', 0.0);
+        $jitter = (float) config('autocache.ttl_jitter', 0.0);
         $delta = (int) round($ttl * max(0.0, $jitter));
 
         return $delta > 0 ? $ttl + random_int(-$delta, $delta) : $ttl;
@@ -209,14 +209,14 @@ trait Cacheable
 
     public function cacheMaxRows(): ?int
     {
-        $max = $this->cacheOption('cacheMaxRows', config('laracache.max_rows'));
+        $max = $this->cacheOption('cacheMaxRows', config('autocache.max_rows'));
 
         return $max === null ? null : (int) $max;
     }
 
     public function cachePrefix(): string
     {
-        return config('laracache.prefix', 'laracache').':'.$this->getTable();
+        return config('autocache.prefix', 'autocache').':'.$this->getTable();
     }
 
     public function cacheVersionKey(): string
@@ -335,7 +335,7 @@ trait Cacheable
      */
     protected function swrWindow(): int
     {
-        return max(0, (int) config('laracache.swr', 0));
+        return max(0, (int) config('autocache.swr', 0));
     }
 
     /**
@@ -344,7 +344,7 @@ trait Cacheable
      */
     protected function computeWithStampedeGuard(CacheRepository $store, string $key, Closure $callback): mixed
     {
-        $seconds = (int) config('laracache.lock_for', 0);
+        $seconds = (int) config('autocache.lock_for', 0);
         $lockStore = $this->rawCacheStore()->getStore();
 
         if ($seconds <= 0 || ! $lockStore instanceof LockProvider) {
@@ -392,13 +392,13 @@ trait Cacheable
 
     protected function recordCacheStat(string $type): void
     {
-        if (! config('laracache.stats', false)) {
+        if (! config('autocache.stats', false)) {
             return;
         }
 
         $store = $this->rawCacheStore();
 
-        foreach (["laracache:stats:{$type}", $this->cachePrefix().":stats:{$type}"] as $statKey) {
+        foreach (["autocache:stats:{$type}", $this->cachePrefix().":stats:{$type}"] as $statKey) {
             try {
                 $store->increment($statKey);
             } catch (\Throwable) {
@@ -550,7 +550,7 @@ trait Cacheable
 
     public function rowCacheEnabled(): bool
     {
-        return (bool) config('laracache.row_cache', true) && $this->cacheIsEnabled();
+        return (bool) config('autocache.row_cache', true) && $this->cacheIsEnabled();
     }
 
     public function rowCacheVersionKey(): string
