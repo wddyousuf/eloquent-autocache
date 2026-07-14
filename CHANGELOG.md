@@ -3,6 +3,17 @@
 All notable changes to `wddyousuf/eloquent-autocache` will be documented in
 this file.
 
+## 0.2.0 - 2026-07-15
+
+### Added
+- Laravel 13 support: `illuminate/database`, `illuminate/support`, and
+  `illuminate/cache` now allow `^13.0` (#3).
+
+### Changed
+- Dev dependencies widened for Laravel 13: `orchestra/testbench ^11.0` and
+  `phpunit/phpunit ^12.0`.
+- CI matrix now tests Laravel 13 on PHP 8.3 and 8.4.
+
 ## 0.1.0 - 2026-07-02
 
 Initial release.
