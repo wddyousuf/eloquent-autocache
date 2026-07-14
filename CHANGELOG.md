@@ -3,6 +3,16 @@
 All notable changes to `wddyousuf/eloquent-autocache` will be documented in
 this file.
 
+## 0.2.1 - 2026-07-15
+
+### Fixed
+- Restored the generic type parameter on `CachedBuilder` (`@template` +
+  `@extends Builder<TModelClass>`) and annotated the trait's builder-returning
+  methods as `CachedBuilder<static>`. Static analysers (PHPStan/Larastan) no
+  longer widen queries on a `Cacheable` model back to a bare `Model`, so
+  `Post::query()->first()` resolves to `Post` again. Docblock-only; no runtime
+  change (#2).
+
 ## 0.2.0 - 2026-07-15
 
 ### Added
