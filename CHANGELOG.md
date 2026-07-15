@@ -3,7 +3,7 @@
 All notable changes to `wddyousuf/eloquent-autocache` will be documented in
 this file.
 
-## Unreleased
+## 0.2.2 - 2026-07-15
 
 ### Fixed
 - Laravel 13 compatibility with the new secure-by-default
