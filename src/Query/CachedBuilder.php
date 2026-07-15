@@ -58,12 +58,27 @@ class CachedBuilder extends Builder
         // hits). The row cache is the single home for canonical finds.
         $cachedBase = $base instanceof CachedQueryBuilder ? $base : null;
 
-        return $model->rememberRowInCache(
+        // Cache the raw attribute array, never the hydrated model. Under
+        // Laravel 13's default cache.serializable_classes => false, a stored
+        // Eloquent model unserializes back as an unusable __PHP_Incomplete_Class;
+        // raw attributes are plain scalars/strings that survive any allow-list.
+        // A canonical find carries no eager-loaded relations, so the attributes
+        // alone reconstitute the model exactly.
+        $attributes = $model->rememberRowInCache(
             $id,
-            fn () => (clone $this)->withoutCache()->whereKey($id)->first($columns),
+            fn () => (clone $this)->withoutCache()->whereKey($id)->first($columns)?->getAttributes(),
             $cachedBase?->getCacheTtlOverride(),
             $cachedBase?->hasCacheTtlOverride() ?? false
         );
+
+        if ($attributes === null) {
+            return null;
+        }
+
+        /** @var TModelClass $fresh */
+        $fresh = $model->newFromBuilder($attributes);
+
+        return $fresh;
     }
 
     /**

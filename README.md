@@ -39,7 +39,13 @@ other store (`file`, `database`, `array`, …). Either way, it just works.
 ## Requirements
 
 - PHP 8.1+
-- Laravel 10, 11, or 12
+- Laravel 10, 11, 12, or 13
+
+On Laravel 13, `config/cache.php` ships `'serializable_classes' => false`, which
+forbids unserializing PHP objects out of a serializing cache store (file,
+database, redis, memcached) to guard against gadget-chain attacks. AutoCache
+works out of the box under this default — it caches only arrays and scalars, so
+you do **not** need to add `stdClass` (or your models) to the allow-list.
 
 ## Installation
 
@@ -99,6 +105,11 @@ Post::where('published', true)->get();   // fresh from the DB again
    and quiet writes that bypass model events.
 4. Flushing either clears the model's cache tags or bumps a per-model version
    counter, depending on whether the store supports tags.
+5. Only plain data is ever written to the cache — query rows are stored as
+   arrays and `find()` stores a row's raw attributes, never a serialized
+   `stdClass` or Eloquent model. This keeps AutoCache compatible with Laravel
+   13's secure-by-default `cache.serializable_classes` allow-list (see
+   [Requirements](#requirements)).
 
 ## What triggers a flush
 
@@ -346,10 +357,11 @@ Nothing to configure.
 - The **version counter** on non-atomic stores (`file`) can, under heavy
   concurrent writes, briefly miss an increment. Use an atomic store (redis,
   memcached) or a taggable store for high-write workloads.
-- The **`array` store** keeps values by reference, so repeated `find($id)`
-  calls return the *same* model instance — unsaved attribute changes on it
-  will be visible to later calls. Serializing stores (redis, file, database,
-  memcached) are unaffected.
+- **Row caching stores raw attributes, not the model.** Every `find($id)`
+  reconstructs a fresh model instance from the cached attributes, so unsaved
+  changes to a returned model are never leaked to later calls — this holds on
+  the `array` store too, and keeps the cache safe to unserialize under Laravel
+  13's `serializable_classes` allow-list.
 
 ## Comparison with other packages
 

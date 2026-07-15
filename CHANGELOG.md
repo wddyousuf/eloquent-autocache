@@ -3,6 +3,22 @@
 All notable changes to `wddyousuf/eloquent-autocache` will be documented in
 this file.
 
+## Unreleased
+
+### Fixed
+- Laravel 13 compatibility with the new secure-by-default
+  `cache.serializable_classes => false`, which forbids unserializing any class
+  (including `stdClass` and Eloquent models) out of a serializing cache store.
+  Cached query rows are now stored as plain arrays and re-objectified on read,
+  and canonical `find()` lookups cache the raw attribute array instead of the
+  hydrated model. Previously, on a default Laravel 13 app any `->paginate()`
+  threw in `getCountForPagination()` (#4), `find()` returned an unusable
+  `__PHP_Incomplete_Class`, and cached `get()` results silently leaked a junk
+  `__PHP_Incomplete_Class_Name` attribute. No configuration change is required.
+
+### Documentation
+- README now lists Laravel 13 under Requirements.
+
 ## 0.2.1 - 2026-07-15
 
 ### Fixed

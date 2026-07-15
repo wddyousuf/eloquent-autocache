@@ -146,12 +146,21 @@ class CachedQueryBuilder extends QueryBuilder
             ? $this->cacheModel->cacheKeyForCustom($this->cacheKeyOverride, 'select')
             : $this->cacheModel->cacheKeyFor($this, (array) ($this->columns ?? ['*']), 'select');
 
-        return $this->cacheModel->rememberInCache(
+        // Cache rows as plain arrays, never as objects. Laravel 13 defaults
+        // config('cache.serializable_classes') to false, so any serializing
+        // store (file/database/redis) unserializes a stored stdClass row back
+        // as an unusable __PHP_Incomplete_Class — which silently corrupts get()
+        // hydration and throws outright in getCountForPagination(). Connection
+        // always fetches rows as FETCH_OBJ stdClass, so re-objectifying on read
+        // restores the exact shape every consumer expects.
+        $rows = $this->cacheModel->rememberInCache(
             $key,
-            fn () => parent::runSelect(),
+            fn () => array_map(fn ($row) => (array) $row, parent::runSelect()),
             $this->cacheTtlOverride,
             $this->cacheTtlOverridden
         );
+
+        return array_map(fn ($row) => (object) $row, $rows);
     }
 
     public function exists()
