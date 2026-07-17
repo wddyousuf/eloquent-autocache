@@ -3,7 +3,11 @@
 All notable changes to `wddyousuf/eloquent-autocache` will be documented in
 this file.
 
-## 0.2.3 - 2026-07-17
+## 0.2.4 - 2026-07-17
+
+> Supersedes 0.2.3, which was withdrawn: a premature `v0.2.3` tag was published
+> to Packagist against an earlier commit, and Packagist blocks moving a released
+> version to a new commit. 0.2.4 is the same code cut cleanly from `main`.
 
 ### Added
 - **Strict transaction caching mode** (`cache_in_transactions`, default `true`).
