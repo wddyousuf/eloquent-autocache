@@ -388,8 +388,22 @@ Nothing to configure.
   single-row flush only applies to the version-counter path (`row_cache`, on
   non-taggable stores). Prefer caching read-heavy / write-light models in tag
   mode — a model written on nearly every request gains little.
-- **Direct `DB::table()` writes** bypass Eloquent entirely; call
-  `AutoCache::flush(Model::class)` afterward if you use them.
+- **Direct `DB::table()` writes** touch neither the model nor its cache-aware
+  builder, so AutoCache cannot see them on its own — the one write class that
+  slips through. Two remedies: call `AutoCache::flush(Model::class)` right after
+  the raw write, or — to catch it automatically wherever it happens — list the
+  model's own table in `pivot_invalidation.map` (the query-stream listener
+  matches on the raw table name, so it invalidates any write to that table, not
+  just pivots):
+
+  ```php
+  // config/autocache.php — auto-invalidate raw writes to the posts table
+  'pivot_invalidation' => [
+      'map' => [
+          'posts' => [App\Models\Post::class],
+      ],
+  ],
+  ```
 - The **version counter** on non-atomic stores (`file`) can, under heavy
   concurrent writes, briefly miss an increment. Use an atomic store (redis,
   memcached) or a taggable store for high-write workloads.

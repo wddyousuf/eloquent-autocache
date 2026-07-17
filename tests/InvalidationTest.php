@@ -107,4 +107,20 @@ class InvalidationTest extends TestCase
         // After commit the deferred flush ran; a fresh read is correct.
         $this->assertCount(3, Post::all());
     }
+
+    /**
+     * Documents a known limitation: a raw DB::table() write touches neither the
+     * model nor its cache-aware builder, so AutoCache cannot see it on its own.
+     * Remedies: call AutoCache::flush(Model::class), or list the table in the
+     * invalidation map (see RawTableWriteTest).
+     */
+    public function test_a_raw_db_table_write_is_not_seen_without_watching(): void
+    {
+        $this->assertSame('first', Post::query()->where('id', 1)->first()->title);
+
+        DB::table('posts')->where('id', 1)->update(['title' => 'invisible']);
+
+        // Stale: the cached read still returns the pre-write value.
+        $this->assertSame('first', Post::query()->where('id', 1)->first()->title);
+    }
 }
