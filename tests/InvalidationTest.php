@@ -91,13 +91,16 @@ class InvalidationTest extends TestCase
         $this->assertSame(3, Post::count());
     }
 
-    public function test_rollback_does_not_leave_stale_cache(): void
+    public function test_deferred_flush_runs_after_commit(): void
     {
         $this->assertCount(2, Post::all());
 
         DB::transaction(function () {
             Post::create(['title' => 'in-transaction']);
-            // Cache flush is deferred until commit.
+            // The write flushes immediately and re-flushes after commit; the
+            // in-transaction read (default mode) re-caches the committed-to-be
+            // value, which is correct on commit. See TransactionCachingTest for
+            // the rollback case and strict mode.
             $this->assertCount(3, Post::all());
         });
 

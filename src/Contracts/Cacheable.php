@@ -19,6 +19,8 @@ interface Cacheable
 
     public function cacheMode(): string;
 
+    public function cacheInTransactions(): bool;
+
     public function cacheUsesTags(): bool;
 
     public function cacheKeyFor(QueryBuilder $query, array $columns = ['*'], string $type = 'get'): string;
