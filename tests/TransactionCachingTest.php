@@ -5,6 +5,7 @@ namespace Wddyousuf\AutoCache\Tests;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Wddyousuf\AutoCache\Tests\Models\Post;
+use Wddyousuf\AutoCache\Tests\Models\StrictPost;
 
 /**
  * Reads issued while a transaction is open can observe not-yet-committed writes.
@@ -67,5 +68,21 @@ class TransactionCachingTest extends TestCase
         // in-transaction read never re-populated it, so the post-rollback read
         // is correct rather than a stale 3.
         $this->assertCount(2, Post::all());
+    }
+
+    public function test_per_model_override_bypasses_cache_in_a_transaction(): void
+    {
+        // Permissive global setting...
+        config()->set('autocache.cache_in_transactions', true);
+
+        $selects = $this->countSelects(function () {
+            DB::transaction(function () {
+                // ...but StrictPost opts out via $cacheInTransactions = false.
+                StrictPost::where('published', true)->get();
+                StrictPost::where('published', true)->get();
+            });
+        });
+
+        $this->assertSame(2, $selects);
     }
 }
