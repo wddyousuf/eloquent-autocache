@@ -378,6 +378,11 @@ Nothing to configure.
   queries (which must also use `Cacheable`). A change to a related model does
   not flush a parent's *root* query unless you wire it up with `$flushRelated`.
 - **`cursor()`** streams and is intentionally never cached.
+- **Reads inside a transaction** are cached by default, which keeps caching
+  working under `RefreshDatabase`. A read that observes an uncommitted write can
+  cache a value a later rollback discards; set `cache_in_transactions => false`
+  (or `$cacheInTransactions = false` on a model) so open-transaction reads bypass
+  the cache entirely and a rollback can never leave a stale entry.
 - **Tag mode flushes the whole model on every write.** With a taggable store
   (redis, memcached), any write clears the model's entire tag; the surgical
   single-row flush only applies to the version-counter path (`row_cache`, on

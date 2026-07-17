@@ -6,6 +6,13 @@ this file.
 ## 0.2.3 - 2026-07-17
 
 ### Added
+- **Strict transaction caching mode** (`cache_in_transactions`, default `true`).
+  Reads issued while a transaction is open can observe a not-yet-committed write
+  and cache it; a later ROLLBACK then leaves that value stale until its TTL. The
+  default preserves the previous behavior (so caching keeps working under
+  RefreshDatabase). Set `false` — globally or per-model via `$cacheInTransactions`
+  — and reads bypass the cache entirely while a transaction is open, so a
+  rollback can never poison it. Writes still flush.
 - **Many-to-many (pivot) invalidation.** A many-to-many write
   (`$post->tags()->sync()`/`->attach()`/`->detach()`) is a bare pivot statement
   that never reaches a cacheable model's builder, so cached relation reads went

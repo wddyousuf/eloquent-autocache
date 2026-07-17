@@ -106,7 +106,26 @@ class CachedQueryBuilder extends QueryBuilder
 
         return $this->cacheEnabled
             && $this->cacheModel->cacheIsEnabled()
-            && ! $this->queryIsVolatile();
+            && ! $this->queryIsVolatile()
+            && ! $this->blockedByOpenTransaction();
+    }
+
+    /**
+     * In strict mode (`cache_in_transactions` = false) a read issued while a
+     * transaction is open bypasses the cache entirely, so a value observed
+     * before commit can never be served from — or written to — the cache and
+     * then survive a rollback.
+     */
+    protected function blockedByOpenTransaction(): bool
+    {
+        if ($this->cacheModel === null || $this->cacheModel->cacheInTransactions()) {
+            return false;
+        }
+
+        $connection = $this->cacheModel->getConnection();
+
+        return method_exists($connection, 'transactionLevel')
+            && $connection->transactionLevel() > 0;
     }
 
     /**

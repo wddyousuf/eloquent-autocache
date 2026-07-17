@@ -136,6 +136,11 @@ trait Cacheable
         return (string) $this->cacheOption('cacheMode', config('autocache.mode', 'auto'));
     }
 
+    public function cacheInTransactions(): bool
+    {
+        return (bool) $this->cacheOption('cacheInTransactions', config('autocache.cache_in_transactions', true));
+    }
+
     /**
      * The underlying (never tagged) store — used for the version counter,
      * stats and locks.

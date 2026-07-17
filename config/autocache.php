@@ -116,6 +116,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Cache Reads Inside Transactions
+    |--------------------------------------------------------------------------
+    |
+    | When true (the default), reads are cached even while a database
+    | transaction is open. This keeps caching working under test suites that
+    | wrap each test in a rolled-back transaction (RefreshDatabase), but a read
+    | that observes a not-yet-committed write can populate the cache with a value
+    | that a later ROLLBACK discards — leaving the cache stale until its TTL.
+    |
+    | Set false for strict correctness: reads issued while a transaction is open
+    | bypass the cache entirely (they are never served from, nor written to, it),
+    | so a rollback can never leave a poisoned entry. Writes still flush.
+    |
+    */
+
+    'cache_in_transactions' => env('AUTOCACHE_CACHE_IN_TRANSACTIONS', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Stale-While-Revalidate
     |--------------------------------------------------------------------------
     |
